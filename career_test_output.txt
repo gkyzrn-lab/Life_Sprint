@@ -1,0 +1,48 @@
+============================================================
+🎯 FULL CAREER PROGRESSION TEST
+============================================================
+
+📌 SEMESTER 1: Accept Entry-Level Job
+  ✓ Job: Barista (Local Café)
+  ✓ Salary: $9360
+  ✓ Performance: 85.9
+
+📌 SEMESTER 2: Switch to IT Helpdesk
+  ✓ Job: IT Helpdesk (Campus)
+  ✓ Salary: $9880
+  ✓ Performance: 85.9
+
+📌 SEMESTER 3: Try Promotion (Should Fail)
+  ✗ Not eligible yet: no_promotion_available
+
+📌 SEMESTER 4: Promotion Check
+
+📌 SEMESTER 5: Performance Raise
+  ✓ Raise: +$5000
+  ✓ New salary: $14880
+
+📌 SEMESTER 6-8: Burnout Accumulation
+  Sem 6: Burnout 2.1 | Performance 91.9
+  Sem 7: Burnout 2.9 | Performance 96.9
+  Sem 8: Burnout 3.7 | Performance 100.0
+
+📌 SEMESTER 9: Therapy Session
+  ✓ Burnout: 3.7 → 0.0
+  ✓ Reduced by: 12.0
+
+📊 CAREER SUMMARY
+  Job: IT Helpdesk (Campus)
+  Salary: $14880
+  Performance: 100.0 (Exceptional)
+  Burnout: 0.0 (Thriving)
+  Promotions: 0
+  Total Raises: $5000
+
+  🏆 Achievements (3):
+    • Work-Life Balance Achieved
+    • Employee of the Semester
+    • Resilient 💪
+
+============================================================
+✅ CAREER SYSTEM FULLY FUNCTIONAL!
+============================================================

@@ -1,0 +1,1 @@
+"""Financial responsibility module init."""

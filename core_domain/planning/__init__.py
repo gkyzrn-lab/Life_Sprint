@@ -1,0 +1,1 @@
+from core_domain.planning.planning_models import SemesterPlan

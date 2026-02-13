@@ -1,0 +1,351 @@
+/**
+ * Example TypeScript / JavaScript integration for the onboarding system.
+ *
+ * This demonstrates how a frontend (React, Vue, etc.) would interact with
+ * the onboarding API to build a guided tutorial experience.
+ */
+
+// ============================================================================
+// 1. Initialize Game & Player
+// ============================================================================
+
+async function startNewGame(
+    playerName: string,
+    collegeId: string,
+    majorId: string,
+    age?: number
+) {
+    // Create a new player
+    const response = await fetch('http://localhost:8000/player/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: playerName,
+            college_id: collegeId,
+            major_id: majorId,
+            age: age,
+            housing_option_id: 'dorm',
+            job_id: null,
+        }),
+    });
+
+    const player = await response.json();
+    return player;
+}
+
+// ============================================================================
+// 2. Fetch & Display Tutorial Sequence
+// ============================================================================
+
+async function showOnboardingFlow(playerId: string) {
+    // Get recommended tutorial sequence
+    const seqResponse = await fetch('http://localhost:8000/onboarding/tutorial-sequence');
+    const { sequence } = await seqResponse.json();
+
+    // Show each tutorial step
+    for (const tutorial of sequence) {
+        await showTutorialStep(tutorial, playerId);
+    }
+}
+
+async function showTutorialStep(tutorial: TutorialStep, playerId: string) {
+    // Display to player
+    const tutorialUI = {
+        title: tutorial.title,
+        description: tutorial.description,
+        actionHint: tutorial.action_hint,
+        buttons: ['Next', 'Skip Tutorial'],
+    };
+
+    console.log(`Tutorial: ${tutorialUI.title}`);
+    console.log(`${tutorialUI.description}`);
+    console.log(`${tutorialUI.actionHint}`);
+
+    // When player clicks "Next", mark tutorial as complete
+    const completeResponse = await fetch('http://localhost:8000/onboarding/tutorial/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            step_id: tutorial.step_id,
+        }),
+    });
+
+    const progress = await completeResponse.json();
+    console.log(`Tutorial progress: ${progress.completion_percentage.toFixed(0)}% complete`);
+}
+
+// ============================================================================
+// 3. Show Context-Specific Help
+// ============================================================================
+
+async function showContextualTutorials(context: string) {
+    // When player opens a page (e.g., planning page), show relevant tutorials
+    const response = await fetch(`http://localhost:8000/onboarding/tutorials/context/${context}`);
+    const { tutorials } = await response.json();
+
+    if (tutorials.length > 0) {
+        console.log(`Showing ${tutorials.length} tutorial(s) for context: ${context}`);
+        for (const tutorial of tutorials) {
+            console.log(`- ${tutorial.title}`);
+        }
+    }
+}
+
+// ============================================================================
+// 4. Inline Tooltips
+// ============================================================================
+
+async function showTooltip(tooltipId: string) {
+    // When player hovers over a term (e.g., "GPA"), fetch explanation
+    const response = await fetch(`http://localhost:8000/onboarding/tooltip/${tooltipId}`);
+    const tooltip = await response.json();
+
+    console.log(`Tooltip: ${tooltip.label}`);
+    console.log(`${tooltip.content}`);
+
+    // When player closes tooltip, optionally dismiss it
+    // (so it's not shown again for repetitive terms)
+    return tooltip;
+}
+
+// ============================================================================
+// 5. Tutorial Progress Tracking
+// ============================================================================
+
+async function getTutorialProgress(playerId: string) {
+    const response = await fetch(`http://localhost:8000/onboarding/${playerId}/progress`);
+    const progress = await response.json();
+
+    console.log(`Tutorials completed: ${progress.completed_steps.length} / 8`);
+    console.log(`Completion: ${progress.completion_percentage.toFixed(0)}%`);
+    console.log(`Tutorials enabled: ${progress.tutorials_enabled}`);
+
+    return progress;
+}
+
+async function dismissTutorial(playerId: string, tooltipId: string) {
+    const response = await fetch('http://localhost:8000/onboarding/tooltip/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            tooltip_id: tooltipId,
+        }),
+    });
+
+    const updated = await response.json();
+    console.log(`Dismissed ${tooltipId}. Now dismissed: ${updated.dismissed_tooltips.length}`);
+}
+
+// ============================================================================
+// 6. Example React Component
+// ============================================================================
+
+/**
+ * React component showing an onboarding modal with tutorial flow.
+ *
+ * Usage:
+ *   <OnboardingModal playerName="Alice" onComplete={handleGameStart} />
+ */
+
+import React, { useState, useEffect } from 'react';
+
+interface TutorialStep {
+    step_id: string;
+    title: string;
+    description: string;
+    context: string;
+    priority: number;
+    action_hint?: string;
+}
+
+interface OnboardingModalProps {
+    playerName: string;
+    onComplete: (player: any) => void;
+}
+
+export function OnboardingModal({
+    playerName,
+    onComplete,
+}: OnboardingModalProps) {
+    const [currentStep, setCurrentStep] = useState(0);
+    const [tutorials, setTutorials] = useState<TutorialStep[]>([]);
+    const [playerId, setPlayerId] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+    // Local form state for initial player setup
+    const [startName, setStartName] = useState(playerName || '');
+    const [startAge, setStartAge] = useState<number | undefined>(undefined);
+    const [starting, setStarting] = useState(false);
+
+    const startGame = async () => {
+        if (!startName) return;
+        setStarting(true);
+        const player = await startNewGame(startName.trim(), 'nyc_public', 'cs', startAge);
+        setPlayerId(player.id);
+
+        // Fetch tutorial sequence after player is created
+        const seqResponse = await fetch('/onboarding/tutorial-sequence');
+        const { sequence } = await seqResponse.json();
+        setTutorials(sequence);
+        setStarting(false);
+    };
+
+    const handleNext = async () => {
+        if (!playerId) return;
+
+        // Mark current tutorial as complete
+        const response = await fetch(
+            'http://localhost:8000/onboarding/tutorial/complete',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    player_id: playerId,
+                    step_id: tutorials[currentStep].step_id,
+                }),
+            }
+        );
+
+        const { completion_percentage } = await response.json();
+        setProgress(completion_percentage);
+
+        if (currentStep < tutorials.length - 1) {
+            setCurrentStep(currentStep + 1);
+        } else {
+            // Onboarding complete!
+            const player = await fetch(
+                `http://localhost:8000/player/${playerId}`
+            ).then((r) => r.json());
+            onComplete(player);
+        }
+    };
+
+    const handleSkip = async () => {
+        if (!playerId) return;
+
+        // Disable tutorials and proceed
+        await fetch(
+            `http://localhost:8000/onboarding/${playerId}/disable-tutorials`,
+            {
+                method: 'POST',
+            }
+        );
+
+        const player = await fetch(
+            `http://localhost:8000/player/${playerId}`
+        ).then((r) => r.json());
+        onComplete(player);
+    };
+
+    // If player hasn't started yet, show start form modal
+    if (!playerId) {
+        return (
+            <div style= {{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+    }>
+        <div style={ { background: 'white', padding: '32px', borderRadius: '8px', maxWidth: '420px', width: '100%' } }>
+            <h2 style={ { marginTop: 0 } }> Welcome — Tell us about you </h2>
+                < div style = {{ marginBottom: '12px' }
+}>
+    <label style={ { display: 'block', fontSize: '14px' } }> Name </label>
+        < input
+value = { startName }
+onChange = {(e) => setStartName(e.target.value)}
+style = {{ width: '100%', padding: '8px', marginTop: '6px' }}
+placeholder = "Your name"
+    />
+    </div>
+    < div style = {{ marginBottom: '12px' }}>
+        <label style={ { display: 'block', fontSize: '14px' } }> Age(optional) </label>
+            < input
+type = "number"
+value = { startAge ?? ''}
+onChange = {(e) => setStartAge(e.target.value ? Number(e.target.value) : undefined)}
+style = {{ width: '100%', padding: '8px', marginTop: '6px' }}
+placeholder = "e.g. 18"
+    />
+    </div>
+    < div style = {{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <button 
+                            onClick={ startGame }
+disabled = { starting || !startName}
+style = {{ flex: 1, padding: '10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: starting || !startName ? 'not-allowed' : 'pointer' }}
+                        >
+    { starting? 'Starting…': 'Start' }
+    </button>
+    < button
+onClick = {() => onComplete(null)}
+style = {{ padding: '10px 14px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+    Skip
+    </button>
+    </div>
+    </div>
+    </div>
+        );
+    }
+
+if (tutorials.length === 0) return <div>Loading...</div>;
+
+const tutorial = tutorials[currentStep];
+
+return (
+    <div style= {{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={ { background: 'white', padding: '40px', borderRadius: '8px', maxWidth: '600px' } }>
+            <div style={ { marginBottom: '20px' } }>
+                <h1>{ tutorial.title } </h1>
+                < div style = {{ fontSize: '16px', color: '#666', marginBottom: '10px' }}>
+                    { tutorial.description }
+                    </div>
+                    < div style = {{ fontSize: '14px', color: '#999', fontStyle: 'italic' }}>
+                        { tutorial.action_hint }
+                        </div>
+                        </div>
+
+                        < div style = {{ marginBottom: '20px' }}>
+                            <div style={ { background: '#e0e0e0', height: '6px', borderRadius: '3px' } }>
+                                <div style={ { background: '#4CAF50', height: '100%', width: `${progress}%`, borderRadius: '3px', transition: 'width 0.3s' } } />
+                                    </div>
+                                    < div style = {{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                                        { currentStep + 1} of { tutorials.length }
+</div>
+    </div>
+
+    < div style = {{ display: 'flex', gap: '10px' }}>
+        <button 
+                        onClick={ handleNext }
+style = {{ flex: 1, padding: '12px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+    { currentStep<tutorials.length - 1 ? 'Next' : 'Start Playing' }
+    </button>
+    < button
+onClick = { handleSkip }
+style = {{ padding: '12px 20px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+    Skip Tutorial
+        </button>
+        </div>
+        </div>
+        </div>
+    );
+}
+
+// ============================================================================
+// 7. Full Game Init Flow
+// ============================================================================
+
+async function initializeGame(playerName: string) {
+    // Step 1: Create player
+    const player = await startNewGame(playerName, 'nyc_public', 'cs');
+    console.log(`🎮 Welcome, ${player.name}!`);
+
+    // Step 2: Show onboarding
+    await showOnboardingFlow(player.id);
+
+    // Step 3: Game ready
+    console.log('✅ Onboarding complete! Game ready to play.');
+    return player;
+}
+
+// Usage:
+// initializeGame("Alice").then(player => console.log("Game started with player", player.id));
