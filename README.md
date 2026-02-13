@@ -14,10 +14,23 @@ To contribute to this project:
    git clone https://github.com/YOUR_USERNAME/Life_Sprint.git
    cd Life_Sprint
    ```
-3. Push to your fork:
+3. Add upstream remote (to sync with the original repository):
+   ```bash
+   git remote add upstream https://github.com/gkyzrn-lab/Life_Sprint.git
+   ```
+4. Make your changes, commit them, and push to your fork:
    ```bash
    git push -u origin main
    ```
+
+### For Connecting a Local Repository
+
+If you have initialized a local repository and want to connect it to GitHub:
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/Life_Sprint.git
+git push -u origin main
+```
 
 ### For Direct Cloning
 
