@@ -277,7 +277,45 @@ async def get_lesson_game_endpoint(lesson_id: str):
 
 
 @router.get("/courses/{course_id}/games")
-async def get_course_games(course_id: str):
+async def get_course_games_endpoint(course_id: str):
+    """Get games for a specific course (legacy endpoint)."""
+    from academics.course_games import get_course_games as fetch_games
+    
+    games = fetch_games(course_id)
+    return {
+        "course_id": course_id,
+        "games": [
+            {
+                "id": game.id,
+                "title": game.title,
+                "description": game.description,
+                "topic": game.topic,
+                "game_type": game.game_type,
+                "estimated_duration_minutes": game.estimated_duration_minutes,
+            }
+            for game in games
+        ]
+    }
+
+
+@router.get("/course/{course_id}")
+async def get_course_details(course_id: str):
+    """
+    Get complete course details including content, topics, games, and resources.
+    Perfect for course attendance/class view.
+    """
+    from academics.course_service import get_course_info
+    
+    course_info = get_course_info(course_id)
+    
+    return {
+        **course_info,
+        "attendance_url": f"/curriculum/attend-class",
+        "topics_enriched": course_info.get("formatted_topics"),
+        "games_available": len(course_info.get("mini_games", [])),
+        "ready_to_play": len(course_info.get("mini_games", [])) > 0
+    }
+
     """Get all mini-games available for lessons in a course."""
     games = get_lesson_games_by_course(course_id)
     
