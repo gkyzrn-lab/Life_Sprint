@@ -1,1 +1,1 @@
-from welbeing.activity_effects import *
+from wellbeing.activity_effects import *

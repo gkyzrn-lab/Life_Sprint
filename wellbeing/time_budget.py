@@ -1,1 +1,1 @@
-from welbeing.time_budget import *
+from wellbeing.time_budget import *

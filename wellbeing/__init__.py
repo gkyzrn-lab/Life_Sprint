@@ -8,6 +8,6 @@ _import('welbeing.activity_effects')
 _import('welbeing.stress_burnout')
 _import('welbeing.time_budget')
 
-from welbeing.activity_effects import *
-from welbeing.stress_burnout import *
-from welbeing.time_budget import *
+from wellbeing.activity_effects import *
+from wellbeing.stress_burnout import *
+from wellbeing.time_budget import *

@@ -1,1 +1,1 @@
-from welbeing.stress_burnout import *
+from wellbeing.stress_burnout import *
