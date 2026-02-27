@@ -395,7 +395,14 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                 }))
 
                 setColleges(transformedColleges)
-                setMajors(Object.values(majorsData))
+                
+                // Transform majors data to include jobPaths from career_paths field
+                const transformedMajors = Object.values(majorsData).map((major: any) => ({
+                    ...major,
+                    jobPaths: major.career_paths || []
+                }))
+                
+                setMajors(transformedMajors)
 
                 // Set default selections to first available options
                 if (transformedColleges.length > 0) {

@@ -17,6 +17,22 @@ MAJORS = {
         "job_outlook": "excellent",
         "typical_salaries": "$90K-$160K entry level",
         "tuition_multiplier": 1.15,
+        "career_paths": ["Software Engineer", "Data Scientist", "AI/ML Engineer", "Full-Stack Developer", "Engineering Lead"],
+    },
+    "engineering": {
+        "id": "engineering",
+        "name": "Engineering",
+        "description": (
+            "Design and build systems, machines, and infrastructure. Combines physics, math, and hands-on lab work. "
+            "Rigorous but rewarding with stable career paths. Specializations in mechanical, electrical, civil, or other disciplines. "
+            "Career challenges: licensing requirements (PE exam), competitive field, project deadlines are demanding."
+        ),
+        "difficulty": "very_high",
+        "avg_gpa_required": 3.4,
+        "job_outlook": "strong",
+        "typical_salaries": "$80K-$110K entry level",
+        "tuition_multiplier": 1.20,
+        "career_paths": ["Mechanical Engineer", "Civil Engineer", "Systems Engineer", "Project Lead", "Technical Director"],
     },
     "mechanical_engineering": {
         "id": "mechanical_engineering",
@@ -32,6 +48,7 @@ MAJORS = {
         "job_outlook": "strong",
         "typical_salaries": "$80K-$110K entry level",
         "tuition_multiplier": 1.20,
+        "career_paths": ["Mechanical Engineer", "Civil Engineer", "Systems Engineer", "Project Lead", "Technical Director"],
     },
     "electrical_engineering": {
         "id": "electrical_engineering",
@@ -47,6 +64,7 @@ MAJORS = {
         "job_outlook": "excellent",
         "typical_salaries": "$85K-$125K entry level",
         "tuition_multiplier": 1.22,
+        "career_paths": ["Electrical Engineer", "Power Systems Engineer", "Hardware Engineer", "Systems Architect", "Technical Manager"],
     },
     "industrial_engineering": {
         "id": "industrial_engineering",
@@ -186,6 +204,7 @@ MAJORS = {
         "job_outlook": "strong",
         "typical_salaries": "$50K-$85K entry level",
         "tuition_multiplier": 1.08,
+        "career_paths": ["Financial Analyst", "Management Consultant", "Entrepreneur", "Marketing Manager", "Product Manager"],
     },
     "accounting": {
         "id": "accounting",
@@ -219,6 +238,22 @@ MAJORS = {
     },
 
     # Humanities
+    "liberal_arts": {
+        "id": "liberal_arts",
+        "name": "Liberal Arts",
+        "description": (
+            "Explore humanities, social sciences, and critical thinking across disciplines. "
+            "Develops well-rounded perspective and strong communication skills. "
+            "Career path less defined but offers flexibility for diverse opportunities. "
+            "Career challenges: lower starting salary, unclear career path, requires self-direction in career building."
+        ),
+        "difficulty": "medium",
+        "avg_gpa_required": 3.0,
+        "job_outlook": "moderate",
+        "typical_salaries": "$50K-$75K entry level",
+        "tuition_multiplier": 0.95,
+        "career_paths": ["Teacher", "Content Writer", "Policy Analyst", "Nonprofit Manager", "Graduate School"],
+    },
     "english": {
         "id": "english",
         "name": "English / Literature",
