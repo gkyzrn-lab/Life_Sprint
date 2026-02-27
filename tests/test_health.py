@@ -28,7 +28,6 @@ def test_player():
     """Create a fresh player for testing"""
     player = Player(
         id="test_health_player",
-        player_id="test_health_player",
         name="Test Player",
         age=18,
         hs_gpa=3.5,

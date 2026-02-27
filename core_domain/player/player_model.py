@@ -15,21 +15,16 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Literal
 from pydantic import BaseModel, Field, computed_field
 
+from core_domain.stats.stats_model import Stats
+from core_domain.finance.finance_models import Finance, Loan, LoanType, LoanPortfolio, RepaymentProfile, RepaymentPlanType
+from core_domain.planning.planning_models import SemesterPlan
+from core_domain.health.health_models import Health
+from core_domain.tutorial import TutorialState
+
 
 # =========================
 # Enums
 # =========================
-
-class LoanType(str, Enum):
-    subsidized = "subsidized"
-    unsubsidized = "unsubsidized"
-    private = "private"
-
-
-class RepaymentPlanType(str, Enum):
-    standard = "standard"
-    idr = "idr"
-
 
 class BurnoutLevel(str, Enum):
     none = "none"          # 0-25
@@ -46,129 +41,6 @@ class HistoryEvent(BaseModel):
     label: str
     semester: int
     details: Dict[str, float] = Field(default_factory=dict)
-
-
-# =========================
-# Stats  (IMPROVED)
-# =========================
-
-class Stats(BaseModel):
-    # Academic
-    gpa: float = 0.0
-    total_credits: int = 0
-
-    # Wellbeing — all 0-100 scale
-    stress: float = 20.0        # higher = worse
-    happiness: float = 70.0     # higher = better
-    health: float = 80.0        # NEW: physical health score
-    sleep_quality: float = 75.0 # NEW: affects GPA & health each semester
-    network_score: float = 0.0  # NEW: built by socializing/clubs/internships
-
-    # Burnout
-    eq: float = 10.0
-    burnout: float = 0.0        # 0-100; at 76+ forces a course drop
-
-    # Planning
-    emergency_tokens: int = 1
-
-    @computed_field
-    @property
-    def burnout_level(self) -> BurnoutLevel:
-        if self.burnout <= 25:
-            return BurnoutLevel.none
-        if self.burnout <= 50:
-            return BurnoutLevel.mild
-        if self.burnout <= 75:
-            return BurnoutLevel.moderate
-        return BurnoutLevel.severe
-
-    @computed_field
-    @property
-    def is_burned_out(self) -> bool:
-        """Severe burnout forces a course drop next semester."""
-        return self.burnout > 75
-
-    @computed_field
-    @property
-    def gpa_modifier(self) -> float:
-        """
-        Composite modifier applied to exam grade points each semester.
-        Poor sleep and high stress drag GPA down; good health lifts it.
-        Range: roughly -0.5 to +0.3
-        """
-        sleep_effect = (self.sleep_quality - 75.0) / 100.0   # -0.75 to +0.25
-        stress_effect = -(self.stress - 20.0) / 200.0         # 0 at baseline, down to -0.4
-        health_effect = (self.health - 80.0) / 500.0          # small positive nudge
-        return round(sleep_effect + stress_effect + health_effect, 3)
-
-
-# =========================
-# Finance / Loans  (unchanged, minor additions)
-# =========================
-
-class Loan(BaseModel):
-    id: str
-    loan_type: LoanType
-    principal: float = 0.0
-    annual_interest_rate: float = 0.0
-    accrued_interest: float = 0.0
-    in_school: bool = True
-    grace_months_remaining: int = 6
-    repayment_months_remaining: int = 120
-    minimum_payment: float = 0.0
-
-
-class LoanPortfolio(BaseModel):
-    loans: List[Loan] = Field(default_factory=list)
-
-    @computed_field
-    @property
-    def total_balance(self) -> float:
-        return round(sum(l.principal + l.accrued_interest for l in self.loans), 2)
-
-    @computed_field
-    @property
-    def total_monthly_payment(self) -> float:
-        return round(sum(l.minimum_payment for l in self.loans if not l.in_school), 2)
-
-
-class RepaymentProfile(BaseModel):
-    plan_type: RepaymentPlanType = RepaymentPlanType.standard
-    annual_income: float = 0.0
-    family_size: int = 1
-    poverty_line_annual: float = 15000.0
-    discretionary_multiplier: float = 1.5
-    idr_percent: float = 0.10
-    payment_cap_to_standard: bool = True
-
-
-class ScholarshipRecord(BaseModel):
-    """NEW: Track each scholarship award for audit and display."""
-    name: str
-    semester: int
-    amount: float
-    reason: str = ""  # e.g. "GPA >= 3.5", "Need-based"
-
-
-class Finance(BaseModel):
-    balance: float = 0.0
-    monthly_expenses: float = 0.0
-    tuition_per_semester: float = 0.0
-    scholarship_per_semester: float = 0.0
-
-    # NEW: full scholarship history
-    scholarship_history: List[ScholarshipRecord] = Field(default_factory=list)
-
-    # NEW: snapshot at graduation for end-game summary
-    total_debt_at_graduation: Optional[float] = None
-
-    loan_portfolio: LoanPortfolio = Field(default_factory=LoanPortfolio)
-    repayment_profile: RepaymentProfile = Field(default_factory=RepaymentProfile)
-
-    @computed_field
-    @property
-    def total_scholarships_earned(self) -> float:
-        return round(sum(s.amount for s in self.scholarship_history), 2)
 
 
 # =========================
@@ -254,24 +126,6 @@ class TimeBudget(BaseModel):
 
 
 # =========================
-# Planning  (IMPROVED)
-# =========================
-
-class SemesterPlan(BaseModel):
-    semester: int
-    housing_option_id: str
-    job_id: Optional[str] = None
-    activities: List[str] = Field(default_factory=list)
-    locked: bool = False
-
-    # NEW: explicit time allocations
-    time_budget: TimeBudget = Field(default_factory=TimeBudget)
-
-    # NEW: player's intended study hours (used in stress calc)
-    intended_study_hours_per_week: float = 15.0
-
-
-# =========================
 # Player  (IMPROVED)
 # =========================
 
@@ -289,10 +143,17 @@ class Player(BaseModel):
     # state
     stats: Stats = Field(default_factory=Stats)
     finance: Finance = Field(default_factory=Finance)
+    health: Optional[Health] = None
     housing: Housing
     job: Optional[Job] = None
     plan: Optional[SemesterPlan] = None
     history: List[HistoryEvent] = Field(default_factory=list)
+
+    # Tutorial & onboarding
+    tutorial_state: TutorialState = Field(default_factory=TutorialState)
+
+    # Side gigs tracking
+    side_gigs: Optional["SideGigsState"] = None
 
     # NEW: academic progress tracking (game NEEDS these)
     completed_courses: List[str] = Field(default_factory=list)
@@ -327,6 +188,12 @@ class Player(BaseModel):
     def estimated_graduation_debt(self) -> float:
         return round(self.finance.loan_portfolio.total_balance, 2)
 
+    def model_post_init(self, __context) -> None:
+        """Initialize side_gigs after model creation to avoid circular import."""
+        if self.side_gigs is None:
+            from core_domain.side_gigs.side_gigs_models import SideGigsState
+            object.__setattr__(self, 'side_gigs', SideGigsState())
+
 
 # =========================
 # Small API DTOs
@@ -334,3 +201,8 @@ class Player(BaseModel):
 
 class ApiError(BaseModel):
     detail: str
+
+
+# Rebuild Player model after SideGigsState is defined
+from core_domain.side_gigs.side_gigs_models import SideGigsState
+Player.model_rebuild()

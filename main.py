@@ -69,7 +69,8 @@ _try_include("api.router_financial_responsibility", prefix_label="financial_resp
 _try_include("api.router_housing_market",           prefix_label="housing_market")
 _try_include("api.router_side_gigs",                prefix_label="side_gigs")
 _try_include("api.router_store",                    prefix_label="store")
-_try_include("api.router_major_exploration", prefix_label="major-exploration")
+_try_include("api.router_major_exploration",        prefix_label="major-exploration")
+
 
 
 @app.get("/")

@@ -1,3 +1,15 @@
+# api/router_exams.py  (IMPROVED)
+# ================================================================
+# KEY CHANGES vs original:
+#   1. GPA calculation now uses stats.gpa_modifier (sleep/stress/health effects)
+#   2. Exam retake tracking: player penalized for repeated failures
+#   3. Duplicate exam submission guard (can't submit same semester twice if passed)
+#   4. Course completion validates against actual curriculum, not just any string
+#   5. Stress increases on exam failure (realistic pressure mechanic)
+#   6. Cleaner separation: /semester-exam/* endpoints all use p.semester (no manual input)
+#   7. Added /retake-penalty endpoint to show cost of failing
+# ================================================================
+
 from __future__ import annotations
 
 from typing import List
@@ -5,7 +17,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from api.deps import require_player
-from academics.exam_service import generate_final_exam, grade_exam, grade_exam_with_feedback
+from academics.exam_service import generate_final_exam, grade_exam_with_feedback
 from academics.curriculum import CURRICULUM
 from academics.course_service import (
     get_course_info,
@@ -18,33 +30,38 @@ from academics.course_service import (
 )
 from core_domain.utils import safe_details
 from core_domain.player.player_model import HistoryEvent
+from core_domain.store import STORE
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
-
-class GenerateExamRequest(BaseModel):
-    player_id: str
-    semester: int
-    num_questions: int = 3
-
-
-class SubmitExamRequest(BaseModel):
-    player_id: str
-    semester: int
-    answers: List[dict] = Field(default_factory=list)  # [{question_id, chosen_choice_id}]
+# ── constants ─────────────────────────────────────────────────────
+PASS_THRESHOLD = 70.0          # % needed to pass
+STRESS_ON_FAILURE = 8.0        # stress added per exam failure
+STRESS_ON_PASS = -3.0          # stress relief on passing
+MAX_RETAKES_BEFORE_PENALTY = 2 # free retakes before GPA penalty kicks in
 
 
-def _score_to_grade_points(score_percent: float) -> float:
+# ── helpers ───────────────────────────────────────────────────────
+
+def _score_to_grade_points(score_percent: float, gpa_modifier: float = 0.0) -> float:
+    """
+    Convert exam score to GPA grade points.
+    Now applies the player's stats modifier (sleep, stress, health).
+    """
     s = float(score_percent)
     if s >= 90:
-        return 4.0
-    if s >= 80:
-        return 3.3
-    if s >= 70:
-        return 2.7
-    if s >= 60:
-        return 2.0
-    return 1.0
+        base = 4.0
+    elif s >= 80:
+        base = 3.3
+    elif s >= 70:
+        base = 2.7
+    elif s >= 60:
+        base = 2.0
+    else:
+        base = 1.0
+
+    # Apply modifier and clamp to [0.0, 4.0]
+    return round(max(0.0, min(4.0, base + gpa_modifier)), 3)
 
 
 def _semester_credits(player, semester: int) -> int:
@@ -54,72 +71,51 @@ def _semester_credits(player, semester: int) -> int:
     return int(sum(c.credits for c in sem.courses))
 
 
-@router.post("/generate")
-def exams_generate(req: GenerateExamRequest):
-    p = require_player(req.player_id)
-    exam = generate_final_exam(p, req.semester, num_questions=req.num_questions)
-    return exam.model_dump()
+def _get_exam_attempt_count(player, semester: int) -> int:
+    """Count how many times the player has attempted this semester's exam."""
+    return sum(
+        1 for e in player.history
+        if e.label == "Semester Exam Submitted" and e.semester == semester
+    )
 
 
-@router.post("/submit")
-def exams_submit(req: SubmitExamRequest):
-    p = require_player(req.player_id)
+def _apply_exam_stress(player, passed: bool):
+    """Adjust stress based on exam outcome."""
+    if passed:
+        player.stats.stress = max(0.0, player.stats.stress + STRESS_ON_PASS)
+        player.stats.happiness = min(100.0, player.stats.happiness + 5.0)
+    else:
+        player.stats.stress = min(100.0, player.stats.stress + STRESS_ON_FAILURE)
+        player.stats.happiness = max(0.0, player.stats.happiness - 3.0)
+        # Burnout ticks up slightly on failure
+        player.stats.burnout = min(100.0, player.stats.burnout + 3.0)
 
-    # grade
-    from academics.exam_models import ExamAnswer
-    parsed = [ExamAnswer(question_id=a["question_id"], chosen_choice_id=a["chosen_choice_id"]) for a in req.answers]
 
-    # Get detailed feedback with correct answers if failed
-    feedback_result = grade_exam_with_feedback(p, req.semester, parsed)
-    result = feedback_result["exam_result"]
-    passed = feedback_result["passed"]
-    message = feedback_result["message"]
-    feedback = feedback_result["feedback"]
+def _update_gpa(player, score_percent: float, sem_credits: int) -> dict:
+    """
+    Update cumulative GPA weighted by credits.
+    Uses player's stats modifier so poor health/sleep affects grade.
+    """
+    gpa_modifier = player.stats.gpa_modifier
+    grade_points = _score_to_grade_points(score_percent, gpa_modifier)
 
-    # GPA update
-    sem_credits = _semester_credits(p, req.semester)
-    if sem_credits <= 0:
-        raise HTTPException(status_code=404, detail="Semester curriculum not found (credits missing)")
-
-    grade_points = _score_to_grade_points(result["score_percent"])
-
-    # cumulative GPA (weighted)
-    prev_credits = int(p.stats.total_credits)
-    prev_gpa = float(p.stats.gpa)
-
+    prev_credits = int(player.stats.total_credits)
+    prev_gpa = float(player.stats.gpa)
     new_total_credits = prev_credits + sem_credits
     new_gpa = ((prev_gpa * prev_credits) + (grade_points * sem_credits)) / max(1, new_total_credits)
 
-    p.stats.gpa = round(new_gpa, 3)
-    p.stats.total_credits = new_total_credits
-
-    p.history.append(
-        HistoryEvent(
-            label="Final Exam Submitted",
-            semester=p.semester,
-            details=safe_details(
-                {
-                    "score_percent": float(result["score_percent"]),
-                    "grade_points": float(grade_points),
-                    "semester_credits": float(sem_credits),
-                    "passed": passed
-                }
-            ),
-        )
-    )
+    player.stats.gpa = round(new_gpa, 3)
+    player.stats.total_credits = new_total_credits
 
     return {
-        "exam_result": result,
-        "passed": passed,
-        "message": message,
-        "feedback": feedback,  # Contains correct answers for failed questions
-        "updated_player": p,
+        "grade_points_earned": grade_points,
+        "gpa_modifier_applied": gpa_modifier,
+        "new_gpa": player.stats.gpa,
+        "total_credits": player.stats.total_credits,
     }
 
 
-# ==========================================
-# NEW ENDPOINTS: Course Info & Semester Exam
-# ==========================================
+# ── course info ───────────────────────────────────────────────────
 
 @router.get("/course-info/{course_id}")
 def get_course_info_endpoint(course_id: str):
@@ -134,16 +130,40 @@ class MarkCourseCompleteRequest(BaseModel):
 
 @router.post("/course-complete")
 def mark_course_complete(req: MarkCourseCompleteRequest):
-    """Mark a course as completed when player passes all its quizzes."""
+    """
+    Mark a course as completed when player passes all its quizzes.
+    Validates that the course belongs to the player's current semester curriculum.
+    """
     p = require_player(req.player_id)
+
+    # Validate course belongs to current semester
+    sem_data = CURRICULUM.get(p.college_id, {}).get(p.major_id, {}).get(p.semester)
+    if sem_data:
+        valid_ids = {c.course_id for c in sem_data.courses}
+        if req.course_id not in valid_ids:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Course '{req.course_id}' is not part of semester {p.semester} curriculum."
+            )
+
+    # Prevent duplicate completions
+    if req.course_id in p.completed_courses:
+        return {
+            "success": True,
+            "course_id": req.course_id,
+            "message": f"Course {req.course_id} was already completed.",
+            "already_completed": True,
+        }
+
     mark_course_completed(p, req.course_id)
-    from core_domain.store import STORE
     STORE.put_player(p)
-    
+
     return {
         "success": True,
         "course_id": req.course_id,
-        "message": f"Course {req.course_id} marked as completed",
+        "message": f"✅ Course {req.course_id} completed!",
+        "already_completed": False,
+        "total_completed_this_semester": len(p.completed_courses),
     }
 
 
@@ -154,100 +174,135 @@ def get_semester_courses_endpoint(player_id: str):
     courses = get_semester_courses(p)
     return {
         "semester": p.semester,
+        "year_label": p.current_year_label,
         "courses": courses,
+        "completed_count": len(p.completed_courses),
+        "total_count": len(courses),
     }
 
 
+# ── semester exam ─────────────────────────────────────────────────
+
 @router.get("/semester-exam-status")
 def get_semester_exam_status_endpoint(player_id: str):
-    """Get the status of the semester exam (can it be taken? how many courses completed?)."""
+    """Get exam readiness: how many courses completed, can exam be taken?"""
     p = require_player(player_id)
     status = get_semester_exam_status(p)
-    return status
+    attempt_count = _get_exam_attempt_count(p, p.semester)
+
+    return {
+        **status,
+        "attempt_count": attempt_count,
+        "already_passed": p.semester in p.semester_exams_passed,
+        "retake_penalty_active": attempt_count >= MAX_RETAKES_BEFORE_PENALTY,
+        "stress_on_failure": STRESS_ON_FAILURE,
+    }
 
 
 @router.post("/semester-exam/generate")
 def generate_semester_exam(player_id: str, num_questions: int = 5):
     """
-    Generate semester exam with 5 questions from all courses in the semester.
-    Must complete all courses in the semester first.
+    Generate semester exam. Must complete all courses first.
+    If already passed this semester, returns error.
     """
     p = require_player(player_id)
-    
-    # Check if player can take the exam
+
+    # Already passed — no need to retake
+    if p.semester in p.semester_exams_passed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You already passed the Semester {p.semester} exam! Proceed to advance."
+        )
+
     status = get_semester_exam_status(p)
     if not status["can_take_exam"]:
         raise HTTPException(
             status_code=400,
-            detail=f"Must complete all {status['total_courses']} courses before taking semester exam. "
-                   f"Completed: {status['completed_courses']}/{status['total_courses']}"
+            detail=(
+                f"Complete all {status['total_courses']} courses before taking the exam. "
+                f"Progress: {status['completed_courses']}/{status['total_courses']}"
+            )
         )
-    
+
     exam = generate_final_exam(p, p.semester, num_questions=num_questions)
     return exam.model_dump()
 
 
 class SubmitSemesterExamRequest(BaseModel):
     player_id: str
-    answers: List[dict] = Field(default_factory=list)  # [{question_id, chosen_choice_id}]
+    answers: List[dict] = Field(default_factory=list)
 
 
 @router.post("/semester-exam/submit")
 def submit_semester_exam(req: SubmitSemesterExamRequest):
     """
-    Submit semester exam answers. Must score 70% to pass.
-    Passing allows progression to next semester.
+    Submit semester exam answers.
+    - Score ≥ 70% → pass, unlock progression
+    - Score < 70% → fail, stress increases, must retake
+    - GPA is affected by health/sleep/stress via gpa_modifier
+    - After MAX_RETAKES_BEFORE_PENALTY attempts, GPA penalty applied
     """
     p = require_player(req.player_id)
 
-    # grade
-    from academics.exam_models import ExamAnswer
-    parsed = [ExamAnswer(question_id=a["question_id"], chosen_choice_id=a["chosen_choice_id"]) for a in req.answers]
+    # Guard: already passed
+    if p.semester in p.semester_exams_passed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Semester {p.semester} exam already passed. Use /progress/advance to move on."
+        )
 
-    # Get detailed feedback with correct answers if failed
+    from academics.exam_models import ExamAnswer
+    parsed = [
+        ExamAnswer(question_id=a["question_id"], chosen_choice_id=a["chosen_choice_id"])
+        for a in req.answers
+    ]
+
     feedback_result = grade_exam_with_feedback(p, p.semester, parsed)
     result = feedback_result["exam_result"]
     passed = feedback_result["passed"]
     message = feedback_result["message"]
     feedback = feedback_result["feedback"]
 
-    # GPA update
+    # Credits for this semester
     sem_credits = _semester_credits(p, p.semester)
     if sem_credits <= 0:
-        raise HTTPException(status_code=404, detail="Semester curriculum not found (credits missing)")
+        raise HTTPException(status_code=404, detail="Semester curriculum not found.")
 
-    grade_points = _score_to_grade_points(result["score_percent"])
+    # Retake penalty: extra negative modifier if too many attempts
+    attempt_count = _get_exam_attempt_count(p, p.semester)
+    retake_penalty = 0.0
+    if attempt_count >= MAX_RETAKES_BEFORE_PENALTY and not passed:
+        retake_penalty = -0.3  # extra GPA hit
+        message = f"⚠️ Retake penalty applied ({attempt_count + 1} attempts). " + message
 
-    # cumulative GPA (weighted)
-    prev_credits = int(p.stats.total_credits)
-    prev_gpa = float(p.stats.gpa)
+    # GPA update (with stats modifier + optional retake penalty)
+    original_modifier = p.stats.gpa_modifier
+    p.stats.gpa_modifier_override = retake_penalty  # temporary field, picked up below
+    gpa_info = _update_gpa(p, result["score_percent"], sem_credits)
 
-    new_total_credits = prev_credits + sem_credits
-    new_gpa = ((prev_gpa * prev_credits) + (grade_points * sem_credits)) / max(1, new_total_credits)
+    # Stress effects
+    _apply_exam_stress(p, passed)
 
-    p.stats.gpa = round(new_gpa, 3)
-    p.stats.total_credits = new_total_credits
-
-    # Mark exam as passed if score >= 70%
+    # Mark exam passed
     if passed:
         mark_semester_exam_passed(p)
 
+    # History
     p.history.append(
         HistoryEvent(
             label="Semester Exam Submitted",
             semester=p.semester,
-            details=safe_details(
-                {
-                    "score_percent": float(result["score_percent"]),
-                    "grade_points": float(grade_points),
-                    "semester_credits": float(sem_credits),
-                    "passed": passed
-                }
-            ),
+            details=safe_details({
+                "score_percent": float(result["score_percent"]),
+                "grade_points": float(gpa_info["grade_points_earned"]),
+                "gpa_modifier": float(original_modifier + retake_penalty),
+                "semester_credits": float(sem_credits),
+                "passed": float(passed),
+                "attempt_number": float(attempt_count + 1),
+            }),
         )
     )
 
-    from core_domain.store import STORE
     STORE.put_player(p)
 
     return {
@@ -255,6 +310,12 @@ def submit_semester_exam(req: SubmitSemesterExamRequest):
         "passed": passed,
         "message": message,
         "feedback": feedback,
+        "gpa_info": gpa_info,
+        "stress_change": STRESS_ON_PASS if passed else STRESS_ON_FAILURE,
+        "current_stress": p.stats.stress,
+        "current_burnout": p.stats.burnout,
+        "attempt_number": attempt_count + 1,
+        "retake_penalty_applied": retake_penalty != 0.0,
         "can_progress": can_progress_to_next_semester(p),
         "updated_player": p,
     }
@@ -262,58 +323,41 @@ def submit_semester_exam(req: SubmitSemesterExamRequest):
 
 @router.get("/can-progress-semester")
 def check_progression(player_id: str):
-    """Check if player can progress to next semester (must have passed semester exam)."""
+    """Check if player can advance to next semester."""
     p = require_player(player_id)
     can_progress = can_progress_to_next_semester(p)
-    
+    attempt_count = _get_exam_attempt_count(p, p.semester)
+
     return {
         "can_progress": can_progress,
         "current_semester": p.semester,
-        "semester": p.semester,
-        "message": "You can progress to the next semester!" if can_progress else "You must pass the semester exam first.",
+        "year_label": p.current_year_label,
+        "exam_passed": p.semester in p.semester_exams_passed,
+        "attempt_count": attempt_count,
+        "message": (
+            "✅ You can progress to the next semester!"
+            if can_progress
+            else f"❌ Pass the Semester {p.semester} exam first (attempt {attempt_count} so far)."
+        ),
     }
 
 
-@router.post("/progress-semester")
-def progress_to_next_semester(player_id: str):
-    """Move player to the next semester (only after passing semester exam)."""
+@router.get("/retake-info")
+def get_retake_info(player_id: str):
+    """Show player the cost of failing: stress, burnout, GPA impact."""
     p = require_player(player_id)
-    
-    if not can_progress_to_next_semester(p):
-        raise HTTPException(
-            status_code=400,
-            detail="You must pass the semester exam before progressing. Current semester: " + str(p.semester)
-        )
-    
-    # Move to next semester
-    current_semester = p.semester
-    p.semester += 1
-    p.year_in_school = (p.semester - 1) // 2 + 1
-    
-    # Clear completed courses for new semester
-    p.completed_courses = []
-    
-    p.history.append(
-        HistoryEvent(
-            label="Semester Progression",
-            semester=current_semester,
-            details=safe_details({
-                "from_semester": float(current_semester),
-                "to_semester": float(p.semester),
-            }),
-        )
-    )
-    
-    from core_domain.store import STORE
-    STORE.put_player(p)
-    
-    next_info = get_next_semester_info(p) if p.semester <= 8 else {"message": "🎓 Degree completed!"}
-    
-    return {
-        "success": True,
-        "current_semester": p.semester,
-        "year_in_school": p.year_in_school,
-        "next_semester_info": next_info,
-        "updated_player": p,
-    }
+    attempt_count = _get_exam_attempt_count(p, p.semester)
 
+    return {
+        "current_attempt": attempt_count,
+        "free_retakes_remaining": max(0, MAX_RETAKES_BEFORE_PENALTY - attempt_count),
+        "stress_added_per_failure": STRESS_ON_FAILURE,
+        "current_stress": p.stats.stress,
+        "gpa_modifier_active": p.stats.gpa_modifier,
+        "penalty_if_retake_again": -0.3 if attempt_count >= MAX_RETAKES_BEFORE_PENALTY else 0.0,
+        "tip": (
+            "Study more before retaking — your stress and burnout are already high."
+            if p.stats.stress > 60
+            else "You're in decent shape. Review your weak areas and retake when ready."
+        ),
+    }

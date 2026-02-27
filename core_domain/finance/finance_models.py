@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class LoanType(str, Enum):
@@ -35,6 +35,12 @@ class Loan(BaseModel):
 
 class LoanPortfolio(BaseModel):
     loans: List[Loan] = Field(default_factory=list)
+
+    @computed_field
+    @property
+    def total_balance(self) -> float:
+        """Total outstanding balance (principal + accrued interest)."""
+        return sum(l.principal + l.accrued_interest for l in self.loans)
 
 
 class RepaymentProfile(BaseModel):
