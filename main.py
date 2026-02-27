@@ -1,10 +1,11 @@
+from __future__ import annotations
+
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import routers explicitly to avoid package import side-effects;
-# each router import is attempted and skipped on failure so the app
-# can still start for development.
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("life_sprint")
 
 app = FastAPI(
     title="Life Sprint Backend",
@@ -14,132 +15,61 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# Add CORS middleware to allow frontend on different port to communicate
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",      # Local frontend development
-        "http://127.0.0.1:3000",      # Local frontend (127.0.0.1 variant)
-        "http://localhost:5173",      # Vite default port (alternative)
-        "http://127.0.0.1:5173",      # Vite default port (127.0.0.1 variant)
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Try to import and include routers individually so a broken submodule
-# won't prevent the whole app from starting during development.
-try:
-    from api.router_player import router as player_router
-    app.include_router(player_router)
-except Exception:
-    pass
+def _try_include(module_path: str, attr: str = "router", prefix_label: str = ""):
+    try:
+        import importlib
+        mod = importlib.import_module(module_path)
+        router = getattr(mod, attr)
+        app.include_router(router)
+        logger.info(f"✅ Router loaded: {prefix_label or module_path}")
+    except Exception as exc:
+        logger.error(f"❌ Failed to load router '{module_path}': {exc}")
 
-try:
-    from api.router_onboarding import router as onboarding_router
-    app.include_router(onboarding_router)
-except Exception:
-    pass
-
-try:
-    from api.router_catalogs import router as catalogs_router
-    app.include_router(catalogs_router)
-except Exception:
-    pass
-
-try:
-    from api.router_curriculum import router as curriculum_router
-    app.include_router(curriculum_router)
-except Exception:
-    pass
-
-try:
-    from api.router_planning import router as planning_router
-    app.include_router(planning_router)
-except Exception:
-    pass
-
-try:
-    from api.router_exams import router as exams_router
-    app.include_router(exams_router)
-except Exception:
-    pass
-
-try:
-    from api.router_finance import router as finance_router
-    app.include_router(finance_router)
-except Exception:
-    pass
-
-try:
-    from api.router_progression import router as progression_router
-    app.include_router(progression_router)
-except Exception:
-    pass
-
-try:
-    from api.router_health import router as health_router
-    app.include_router(health_router)
-except Exception:
-    pass
-
-try:
-    from api.router_career import router as career_router
-    app.include_router(career_router)
-except Exception:
-    pass
-
-try:
-    from api.router_financial_responsibility import router as financial_responsibility_router
-    app.include_router(financial_responsibility_router)
-except Exception:
-    pass
-
-try:
-    from api.router_housing_market import router as housing_market_router
-    app.include_router(housing_market_router)
-except Exception:
-    pass
-
-try:
-    from api.router_side_gigs import router as side_gigs_router
-    app.include_router(side_gigs_router)
-except Exception:
-    pass
-
-try:
-    from api.router_store import router as store_router
-    app.include_router(store_router)
-except Exception:
-    pass
-
+_try_include("api.router_player",                   prefix_label="player")
+_try_include("api.router_onboarding",               prefix_label="onboarding")
+_try_include("api.router_catalogs",                 prefix_label="catalogs")
+_try_include("api.router_curriculum",               prefix_label="curriculum")
+_try_include("api.router_planning",                 prefix_label="planning")
+_try_include("api.router_exams",                    prefix_label="exams")
+_try_include("api.router_finance",                  prefix_label="finance")
+_try_include("api.router_progression",              prefix_label="progression")
+_try_include("api.router_health",                   prefix_label="health")
+_try_include("api.router_career",                   prefix_label="career")
+_try_include("api.router_financial_responsibility", prefix_label="financial_responsibility")
+_try_include("api.router_housing_market",           prefix_label="housing_market")
+_try_include("api.router_side_gigs",                prefix_label="side_gigs")
+_try_include("api.router_store",                    prefix_label="store")
 
 @app.get("/")
 def root():
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "methods") and hasattr(route, "path"):
+            routes.append({
+                "path": route.path,
+                "methods": sorted(route.methods),
+                "name": route.name,
+            })
     return {
         "status": "ok",
         "message": "Life Sprint Backend running",
-        "routes": [
-            "/player/start",
-            "/onboarding/tutorial-sequence",
-            "/onboarding/tutorial/{step_id}",
-            "/onboarding/tutorials/context/{context}",
-            "/onboarding/tooltips",
-            "/onboarding/tooltip/{tooltip_id}",
-            "/onboarding/tutorial/complete",
-            "/onboarding/tooltip/dismiss",
-            "/onboarding/{player_id}/progress",
-            "/catalogs/*",
-            "/curriculum/*",
-            "/planning/*",
-            "/exams/*",
-            "/finance/*",
-            "/health/*",
-            "/career/*",
-            "/financial-responsibility/*",
-            "/housing-market/*",
-            "/side-gigs/*",
-            "/progress/advance",
-        ],
+        "total_routes": len(routes),
+        "routes": routes,
     }
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "version": app.version}
