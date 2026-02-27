@@ -10,52 +10,85 @@ interface OnboardingModalProps {
 // College options with major-dependent tuition (fallback if API fails)
 const COLLEGES = [
     {
-        id: 'nyc_public',
-        name: 'NYC City College',
-        baseNote: 'Public Institution',
+        id: 'cuny_baruch',
+        name: 'CUNY Baruch College',
+        baseNote: 'Public City College - Most Affordable',
         tuitionByMajor: {
-            'cs': 10000,
-            'business': 8000,
-            'engineering': 12000,
-            'liberal_arts': 7500
+            'cs': 8450,
+            'business': 7340,
+            'engineering': 8850,
+            'liberal_arts': 7100
         },
         benefits: [
-            'Affordable option',
-            'Strong urban networking',
-            'Diverse student body',
-            'Good value proposition'
+            'Most affordable tuition',
+            'Excellent value for money',
+            'Strong NYC business connections',
+            'Diverse, motivated student body',
+            'Lower financial stress'
         ],
         cons: [
-            'Limited campus facilities',
-            'Larger class sizes',
-            'Less research funding',
-            'More commute time'
+            'Large class sizes (100+ students)',
+            'Limited on-campus housing',
+            'Competitive course registration',
+            'Less hand-holding from advisors',
+            'Fewer resources than private schools'
         ],
-        jobPaths: ['Tech startups', 'Finance firms', 'Government IT', 'SME businesses']
+        jobPaths: ['NYC corporations', 'Finance & accounting', 'Public sector', 'Small business']
     },
     {
-        id: 'nyc_private',
-        name: 'NYC Private University',
-        baseNote: 'Private Institution',
+        id: 'nyu',
+        name: 'New York University',
+        baseNote: 'Elite Private University',
         tuitionByMajor: {
-            'cs': 42000,
-            'business': 38000,
-            'engineering': 45000,
-            'liberal_arts': 36000
+            'cs': 69503,
+            'business': 60438,
+            'engineering': 70500,
+            'liberal_arts': 58000
         },
         benefits: [
-            'Prestigious reputation',
-            'Excellent networking',
-            'Small class sizes',
-            'Strong career services'
+            'Prestigious global reputation',
+            'Elite alumni network',
+            'Excellent career services',
+            'Smaller class sizes',
+            'World-class professors',
+            'Top-tier internship access'
         ],
         cons: [
-            'High tuition costs',
-            'More competitive stress',
-            'Limited financial aid',
-            'Heavy coursework'
+            'Very high tuition ($240K+ total)',
+            'High academic pressure',
+            'Competitive peer environment',
+            'Expensive NYC lifestyle expected',
+            'Heavy loan burden post-graduation'
         ],
-        jobPaths: ['Top tech companies', 'Investment banks', 'Consulting firms', 'Fortune 500']
+        jobPaths: ['Investment banking', 'Top tech companies', 'Consulting firms', 'Corporate leadership']
+    },
+    {
+        id: 'columbia',
+        name: 'Columbia University',
+        baseNote: '🏆 Ivy League - Highest Prestige & Challenge',
+        tuitionByMajor: {
+            'cs': 78600,
+            'business': 68400,
+            'engineering': 79500,
+            'liberal_arts': 66000
+        },
+        benefits: [
+            'Ivy League prestige opens doors everywhere',
+            'Unmatched alumni network (CEOs, founders, leaders)',
+            'World-renowned faculty',
+            'Premium career placement services',
+            'Exclusive networking events',
+            'Highest starting salaries'
+        ],
+        cons: [
+            'Extremely high tuition ($270K+ total)',
+            'Most academically challenging (hardest curves)',
+            'Intense competition with brilliant peers',
+            'High stress and burnout risk',
+            'Pressure to maintain top performance',
+            'Massive debt if no financial aid'
+        ],
+        jobPaths: ['Fortune 500 executives', 'Goldman Sachs / JP Morgan', 'Top law/med schools', 'Silicon Valley leadership']
     }
 ]
 
@@ -64,14 +97,18 @@ const MAJORS = [
     {
         id: 'cs',
         name: 'Computer Science',
+        description: 'Learn programming, data structures, algorithms, and software engineering. High earning potential but demanding coursework (advanced math, problem-solving). Leads to tech careers, startups, and innovation roles.',
         focus: 'Software development, algorithms, systems',
+        difficulty: 'high',
+        typical_salaries: '$80K-$150K entry level',
+        job_outlook: 'excellent',
         costMultiplier: 1.25,
-        costNote: 'Most expensive - Lab & equipment costs',
+        costNote: 'Higher costs - Lab & equipment fees',
         benefits: [
-            'Highest starting salary ($65k+)',
+            'Highest starting salary potential',
             'Abundant job opportunities',
             'Remote work flexibility',
-            'Continuous learning'
+            'Startup opportunities'
         ],
         cons: [
             'Very challenging coursework',
@@ -85,7 +122,11 @@ const MAJORS = [
     {
         id: 'business',
         name: 'Business Administration',
+        description: 'Master management, finance, marketing, and entrepreneurship. Versatile degree with good work-life balance. Strong networking is essential for success.',
         focus: 'Finance, management, entrepreneurship',
+        difficulty: 'moderate',
+        typical_salaries: '$55K-$85K entry level',
+        job_outlook: 'good',
         costMultiplier: 1.0,
         costNote: 'Base rate - Most affordable',
         benefits: [
@@ -95,10 +136,10 @@ const MAJORS = [
             'Entrepreneurship friendly'
         ],
         cons: [
-            'Lower starting salary ($55k)',
-            'More competition',
-            'Networking crucial',
-            'Less hands-on skills'
+            'More networking required',
+            'Broader competition',
+            'Results depend on connections',
+            'Less specialized skills'
         ],
         jobPaths: ['Financial Analyst', 'Business Manager', 'Entrepreneur', 'Consultant'],
         skillsGained: ['Finance', 'Leadership', 'Communications', 'Analytics']
@@ -106,7 +147,11 @@ const MAJORS = [
     {
         id: 'engineering',
         name: 'Engineering',
+        description: 'Design and build systems, machines, and infrastructure. Combines physics, math, and hands-on lab work. Rigorous but rewarding with stable career paths.',
         focus: 'Hardware, mechanical, civil systems',
+        difficulty: 'very_high',
+        typical_salaries: '$70K-$95K entry level',
+        job_outlook: 'strong',
         costMultiplier: 1.50,
         costNote: 'Most expensive - Advanced labs & equipment',
         benefits: [
@@ -119,7 +164,7 @@ const MAJORS = [
             'Rigorous math requirements',
             'Lab work time-intensive',
             'Project deadlines',
-            'Less startup culture'
+            'Licensing requirements (PE exam)'
         ],
         jobPaths: ['Junior Engineer', 'Senior Engineer', 'Project Lead', 'Director'],
         skillsGained: ['MATLAB', 'CAD', 'Physics', 'Problem-solving']
@@ -127,7 +172,11 @@ const MAJORS = [
     {
         id: 'liberal_arts',
         name: 'Liberal Arts',
+        description: 'Explore humanities, social sciences, and critical thinking. Develops well-rounded perspective and communication skills. Career path less defined but offers flexibility.',
         focus: 'Humanities, social sciences, philosophy',
+        difficulty: 'moderate',
+        typical_salaries: '$45K-$65K entry level',
+        job_outlook: 'moderate',
         costMultiplier: 0.95,
         costNote: 'Most affordable - Lower overhead costs',
         benefits: [
@@ -137,7 +186,7 @@ const MAJORS = [
             'Lower course intensity'
         ],
         cons: [
-            'Lower starting salary ($45k)',
+            'Lower starting salary',
             'Unclear career path',
             'Job market flexibility needed',
             'May need grad school'
@@ -280,7 +329,7 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
     const [error, setError] = useState<string | null>(null)
     const [playerAge, setPlayerAge] = useState(18)
     const [showAgeScreen, setShowAgeScreen] = useState(true)
-    const [selectedCollege, setSelectedCollege] = useState('nyc_public')
+    const [selectedCollege, setSelectedCollege] = useState('cuny_baruch')
     const [selectedMajor, setSelectedMajor] = useState('cs')
     const [colleges, setColleges] = useState<any[]>([])
     const [majors, setMajors] = useState<any[]>([])
@@ -330,12 +379,12 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                 const transformedColleges = Object.values(collegesData).map((college: any) => ({
                     id: college.id,
                     name: college.name,
-                    baseNote: college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution',
+                    baseNote: college.notes || college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution',
                     tuitionByMajor: {
-                        'cs': college.base_tuition_per_year,
+                        'cs': college.base_tuition_per_year * 1.15,
                         'business': college.base_tuition_per_year,
-                        'engineering': college.base_tuition_per_year,
-                        'liberal_arts': college.base_tuition_per_year
+                        'engineering': college.base_tuition_per_year * 1.20,
+                        'liberal_arts': college.base_tuition_per_year * 0.95
                     },
                     benefits: college.benefits || [],
                     cons: college.cons || [],
