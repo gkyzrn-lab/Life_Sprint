@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { TutorialStep, getTutorialSequence, completeTutorial, disableTutorials, createPlayer } from '../utils/api'
+import { TutorialStep, getTutorialSequence, completeTutorial, disableTutorials, createPlayer, getColleges, getMajors } from '../utils/api'
 import './OnboardingModal.css'
 
 interface OnboardingModalProps {
@@ -7,34 +7,397 @@ interface OnboardingModalProps {
     onComplete: (player: any) => void
 }
 
+// College options with major-dependent tuition (fallback if API fails)
+const COLLEGES = [
+    {
+        id: 'nyc_public',
+        name: 'NYC City College',
+        baseNote: 'Public Institution',
+        tuitionByMajor: {
+            'cs': 10000,
+            'business': 8000,
+            'engineering': 12000,
+            'liberal_arts': 7500
+        },
+        benefits: [
+            'Affordable option',
+            'Strong urban networking',
+            'Diverse student body',
+            'Good value proposition'
+        ],
+        cons: [
+            'Limited campus facilities',
+            'Larger class sizes',
+            'Less research funding',
+            'More commute time'
+        ],
+        jobPaths: ['Tech startups', 'Finance firms', 'Government IT', 'SME businesses']
+    },
+    {
+        id: 'nyc_private',
+        name: 'NYC Private University',
+        baseNote: 'Private Institution',
+        tuitionByMajor: {
+            'cs': 42000,
+            'business': 38000,
+            'engineering': 45000,
+            'liberal_arts': 36000
+        },
+        benefits: [
+            'Prestigious reputation',
+            'Excellent networking',
+            'Small class sizes',
+            'Strong career services'
+        ],
+        cons: [
+            'High tuition costs',
+            'More competitive stress',
+            'Limited financial aid',
+            'Heavy coursework'
+        ],
+        jobPaths: ['Top tech companies', 'Investment banks', 'Consulting firms', 'Fortune 500']
+    }
+]
+
+// Major options with detailed information
+const MAJORS = [
+    {
+        id: 'cs',
+        name: 'Computer Science',
+        focus: 'Software development, algorithms, systems',
+        costMultiplier: 1.25,
+        costNote: 'Most expensive - Lab & equipment costs',
+        benefits: [
+            'Highest starting salary ($65k+)',
+            'Abundant job opportunities',
+            'Remote work flexibility',
+            'Continuous learning'
+        ],
+        cons: [
+            'Very challenging coursework',
+            'High burnout risk',
+            'Requires constant upskilling',
+            'Competitive job market'
+        ],
+        jobPaths: ['Junior Developer', 'Software Engineer', 'Tech Lead', 'Engineering Manager'],
+        skillsGained: ['Python', 'Algorithms', 'Databases', 'System design']
+    },
+    {
+        id: 'business',
+        name: 'Business Administration',
+        focus: 'Finance, management, entrepreneurship',
+        costMultiplier: 1.0,
+        costNote: 'Base rate - Most affordable',
+        benefits: [
+            'Versatile career paths',
+            'Good work-life balance',
+            'Less technical stress',
+            'Entrepreneurship friendly'
+        ],
+        cons: [
+            'Lower starting salary ($55k)',
+            'More competition',
+            'Networking crucial',
+            'Less hands-on skills'
+        ],
+        jobPaths: ['Financial Analyst', 'Business Manager', 'Entrepreneur', 'Consultant'],
+        skillsGained: ['Finance', 'Leadership', 'Communications', 'Analytics']
+    },
+    {
+        id: 'engineering',
+        name: 'Engineering',
+        focus: 'Hardware, mechanical, civil systems',
+        costMultiplier: 1.50,
+        costNote: 'Most expensive - Advanced labs & equipment',
+        benefits: [
+            'Strong salary growth',
+            'Stable employment',
+            'Impactful work',
+            'Clear promotion paths'
+        ],
+        cons: [
+            'Rigorous math requirements',
+            'Lab work time-intensive',
+            'Project deadlines',
+            'Less startup culture'
+        ],
+        jobPaths: ['Junior Engineer', 'Senior Engineer', 'Project Lead', 'Director'],
+        skillsGained: ['MATLAB', 'CAD', 'Physics', 'Problem-solving']
+    },
+    {
+        id: 'liberal_arts',
+        name: 'Liberal Arts',
+        focus: 'Humanities, social sciences, philosophy',
+        costMultiplier: 0.95,
+        costNote: 'Most affordable - Lower overhead costs',
+        benefits: [
+            'Flexible curriculum',
+            'Creative thinking',
+            'Well-rounded education',
+            'Lower course intensity'
+        ],
+        cons: [
+            'Lower starting salary ($45k)',
+            'Unclear career path',
+            'Job market flexibility needed',
+            'May need grad school'
+        ],
+        jobPaths: ['Teacher', 'Writer', 'Analyst', 'Consultant'],
+        skillsGained: ['Critical thinking', 'Writing', 'Analysis', 'Communication']
+    }
+]
+
+// Housing options with detailed information
+const HOUSING_CATEGORIES = [
+    {
+        id: 'dorm',
+        icon: '🏢',
+        name: 'Dorm',
+        description: 'On-campus housing with flexible terms',
+        minLeaseSemesters: 1,
+        penaltyFee: 0,
+        options: [
+            {
+                id: 'dorm_standard',
+                name: 'Standard Dorm',
+                monthlyCost: 900,
+                upfrontCost: 0,
+                commuteMinutes: 5,
+                stressLevel: 'Low',
+                benefits: ['Walking distance to classes', 'Social community', 'No lease commitment'],
+                cons: ['Shared facilities', 'Limited privacy']
+            }
+        ]
+    },
+    {
+        id: 'family',
+        icon: '👨‍👩‍👧‍👦',
+        name: 'Family',
+        description: 'Living with family members',
+        minLeaseSemesters: 1,
+        penaltyFee: 0,
+        options: [
+            {
+                id: 'family_stay',
+                name: 'Live with Family',
+                monthlyCost: 0,
+                upfrontCost: 0,
+                commuteMinutes: 45,
+                stressLevel: 'Medium',
+                benefits: ['Free housing', 'Family support', 'No lease'],
+                cons: ['Long commute', 'Less independence']
+            }
+        ]
+    },
+    {
+        id: 'rent',
+        icon: '🏠',
+        name: 'Rent',
+        description: 'Rent your own apartment (2+ semester commitment)',
+        minLeaseSemesters: 2,
+        penaltyFee: 3000,
+        options: [
+            {
+                id: 'apt_cozy',
+                name: 'Budget Apartment',
+                monthlyCost: 1100,
+                upfrontCost: 2200,
+                commuteMinutes: 25,
+                stressLevel: 'Medium',
+                benefits: ['Own space', 'Affordable', 'Manageable commute'],
+                cons: ['2-semester minimum', 'Tight budget if break lease']
+            },
+            {
+                id: 'apt_spacious',
+                name: 'Modern Apartment',
+                monthlyCost: 1500,
+                upfrontCost: 3000,
+                commuteMinutes: 15,
+                stressLevel: 'Low',
+                benefits: ['Modern amenities', 'Close to campus', 'More comfortable'],
+                cons: ['2-semester minimum', 'Higher rent']
+            },
+            {
+                id: 'apt_luxury',
+                name: 'Luxury Apartment',
+                monthlyCost: 2000,
+                upfrontCost: 4000,
+                commuteMinutes: 10,
+                stressLevel: 'Low',
+                benefits: ['Premium amenities', 'Walking distance', 'Great social scene'],
+                cons: ['2-semester minimum', 'Very expensive']
+            }
+        ]
+    },
+    {
+        id: 'shared',
+        icon: '🤝',
+        name: 'House Sharing',
+        description: 'Share a house/apartment with roommates',
+        minLeaseSemesters: 1,
+        penaltyFee: 1500,
+        options: [
+            {
+                id: 'shared_basic',
+                name: 'Basic Shared House',
+                monthlyCost: 650,
+                upfrontCost: 1300,
+                commuteMinutes: 30,
+                stressLevel: 'Medium-High',
+                benefits: ['Very affordable', 'Social living', 'Shared utilities'],
+                cons: ['Noisy roommates', 'Shared facilities']
+            },
+            {
+                id: 'shared_comfortable',
+                name: 'Comfortable Apartment',
+                monthlyCost: 850,
+                upfrontCost: 1700,
+                commuteMinutes: 20,
+                stressLevel: 'Medium',
+                benefits: ['Affordable', 'Good location', 'Nice roommates'],
+                cons: ['Shared space', 'Can have conflicts']
+            },
+            {
+                id: 'shared_upscale',
+                name: 'Upscale Loft',
+                monthlyCost: 1100,
+                upfrontCost: 2200,
+                commuteMinutes: 12,
+                stressLevel: 'Low',
+                benefits: ['Modern space', 'Close to campus', 'Great community'],
+                cons: ['More expensive sharing', 'Still shared space']
+            }
+        ]
+    }
+]
+
 export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps) {
     const [currentStep, setCurrentStep] = useState(0)
     const [tutorials, setTutorials] = useState<TutorialStep[]>([])
     const [playerId, setPlayerId] = useState<string | null>(null)
     const [progress, setProgress] = useState(0)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [playerAge, setPlayerAge] = useState(18)
+    const [showAgeScreen, setShowAgeScreen] = useState(true)
+    const [selectedCollege, setSelectedCollege] = useState('nyc_public')
+    const [selectedMajor, setSelectedMajor] = useState('cs')
+    const [colleges, setColleges] = useState<any[]>([])
+    const [majors, setMajors] = useState<any[]>([])
+    const [loadingCatalogs, setLoadingCatalogs] = useState(true)
+    const [showSelection, setShowSelection] = useState(false)
+    const [showHousingScreen, setShowHousingScreen] = useState(false)
+    const [selectedHousingCategory, setSelectedHousingCategory] = useState<string | null>(null)
+    const [selectedHousingOption, setSelectedHousingOption] = useState<string | null>(null)
 
+    // New states for setup step
+    const [showSetup, setShowSetup] = useState(false)
+    const [playsCollege, setPlaysCollege] = useState(false)
+    const [highSchoolGPA, setHighSchoolGPA] = useState(3.5)
+    const [suggestedBudget, setSuggestedBudget] = useState(5000)
+    const [playerBudget, setPlayerBudget] = useState(5000)
+    const [budgetWarning, setBudgetWarning] = useState('')
+
+    // Calculate scholarship based on GPA
+    const getScholarshipPercentage = (gpa: number): number => {
+        if (gpa >= 3.8) return 50
+        if (gpa >= 3.5) return 30
+        if (gpa >= 3.0) return 15
+        return 0
+    }
+
+    // Validate budget and show warning
+    const handleBudgetChange = (value: number) => {
+        setPlayerBudget(value)
+        if (value < 1000) {
+            setBudgetWarning('⚠️ Very risky - Less than $1000 is extremely tight. You may struggle to cover expenses.')
+        } else if (value < suggestedBudget * 0.5) {
+            setBudgetWarning('⚠️ Below average - You\'ll need to be very careful with money.')
+        } else if (value > suggestedBudget * 2.5) {
+            setBudgetWarning('💰 Above average - This is more cushion than most NYC freshmen have.')
+        } else {
+            setBudgetWarning('')
+        }
+    }
+
+    // Fetch colleges and majors from API
     useEffect(() => {
-        const initGame = async () => {
+        const fetchCatalogs = async () => {
             try {
-                setLoading(true)
-                // 1. Create player
-                const player = await createPlayer(playerName, 'nyc_public', 'cs')
-                setPlayerId(player.id)
+                const [collegesData, majorsData] = await Promise.all([getColleges(), getMajors()])
 
-                // 2. Fetch tutorial sequence
-                const { sequence } = await getTutorialSequence()
-                setTutorials(sequence)
-                setLoading(false)
+                // Transform colleges data
+                const transformedColleges = Object.values(collegesData).map((college: any) => ({
+                    id: college.id,
+                    name: college.name,
+                    baseNote: college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution',
+                    tuitionByMajor: {
+                        'cs': college.base_tuition_per_year,
+                        'business': college.base_tuition_per_year,
+                        'engineering': college.base_tuition_per_year,
+                        'liberal_arts': college.base_tuition_per_year
+                    },
+                    benefits: college.benefits || [],
+                    cons: college.cons || [],
+                    jobPaths: college.career_paths || [],
+                    networkingMultiplier: college.networking_multiplier || 1.0,
+                    jobOpportunityBonus: college.job_opportunity_bonus || 0,
+                    startingSalaryMultiplier: college.starting_salary_multiplier || 1.0
+                }))
+
+                setColleges(transformedColleges)
+                setMajors(Object.values(majorsData))
+
+                // Set default selections to first available options
+                if (transformedColleges.length > 0) {
+                    setSelectedCollege(transformedColleges[0].id)
+                }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to initialize game')
-                setLoading(false)
+                console.error('Failed to fetch catalogs:', err)
+                // Use fallback hardcoded data
+                setColleges(COLLEGES)
+                setMajors(MAJORS)
+            } finally {
+                setLoadingCatalogs(false)
             }
         }
+        fetchCatalogs()
+    }, [])
 
-        initGame()
-    }, [playerName])
+    // Handle starting the game (creates player and loads tutorials)
+    const handleStartGame = async () => {
+        try {
+            console.log('Starting game with:', { playerName, selectedCollege, selectedMajor, selectedHousingOption })
+            setLoading(true)
+
+            // 1. Create player with selected college and major
+            console.log('Creating player...')
+            const player = await createPlayer(
+                playerName,
+                selectedCollege,
+                selectedMajor,
+                highSchoolGPA,
+                playerBudget,
+                playerAge,
+                selectedHousingOption || 'dorm'
+            )
+            console.log('Player created:', player)
+            setPlayerId(player.id)
+            setShowSetup(false) // Clear setup flag
+            setShowSelection(false) // Clear selection flag so we show tutorials next
+
+            // 2. Fetch tutorial sequence
+            console.log('Fetching tutorial sequence...')
+            const { sequence } = await getTutorialSequence()
+            console.log('Tutorials loaded:', sequence)
+            setTutorials(sequence)
+            setLoading(false)
+        } catch (err) {
+            console.error('Error in handleStartGame:', err)
+            setError(err instanceof Error ? err.message : 'Failed to initialize game')
+            setLoading(false)
+        }
+    }
 
     const handleNext = async () => {
         if (!playerId) return
@@ -91,7 +454,455 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
         )
     }
 
-    if (loading || tutorials.length === 0) {
+    // Show age screen - FIRST step
+    if (showAgeScreen) {
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal age-modal">
+                    <div className="age-content">
+                        <h1>🎂 Welcome to Life Sprint!</h1>
+                        <p className="age-intro">Hello, {playerName}! How old are you?</p>
+
+                        <div className="age-section">
+                            <p className="age-label">Age: <span className="age-value">{playerAge}</span></p>
+                            <input
+                                type="range"
+                                min="16"
+                                max="25"
+                                value={playerAge}
+                                onChange={(e) => setPlayerAge(parseInt(e.target.value))}
+                                className="age-slider"
+                            />
+                            <div className="age-scale">
+                                <span>16</span>
+                                <span>18</span>
+                                <span>25</span>
+                            </div>
+                            <p className="age-hint">
+                                {playerAge < 18
+                                    ? '🏫 High school student - You\'re just starting your journey!'
+                                    : playerAge === 18
+                                        ? '🎓 College freshman - Time to make important decisions!'
+                                        : playerAge < 25
+                                            ? '👨‍💼 Recent graduate - Navigating early career life!'
+                                            : '🚀 Established adult - Making strategic life moves!'}
+                            </p>
+                        </div>
+
+                        <div className="button-group">
+                            <button
+                                onClick={() => {
+                                    setShowAgeScreen(false)
+                                    setShowSelection(true)
+                                }}
+                                className="btn btn-primary"
+                            >
+                                Continue →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Show college and major selection first
+    if (showSelection) {
+        const collegeList = colleges.length > 0 ? colleges : COLLEGES
+        const majorList = majors.length > 0 ? majors : MAJORS
+        const selectedCollegeData = collegeList.find(c => c.id === selectedCollege)
+        const selectedMajorData = majorList.find(m => m.id === selectedMajor)
+
+        if (loadingCatalogs) {
+            return (
+                <div className="onboarding-container">
+                    <div className="onboarding-modal">
+                        <p>Loading colleges and majors...</p>
+                    </div>
+                </div>
+            )
+        }
+
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal selection-modal">
+                    <div className="selection-content">
+                        <h1>🎓 Welcome to Life Sprint!</h1>
+                        <p className="welcome-message">Hello, {playerName}! Choose your college and major to begin your journey.</p>
+
+                        <div style={{ background: '#e3f2fd', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', borderLeft: '4px solid #1976d2' }}>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#1565c0', lineHeight: '1.5' }}>
+                                💡 <strong>Tip:</strong> Your college choice affects networking opportunities, job access, and starting salaries.
+                                Higher-tier schools provide better connections but cost more.
+                            </p>
+                        </div>
+
+                        <div className="selection-grid">
+                            {/* College Selection */}
+                            <div className="selection-column">
+                                <h2>Select Your College</h2>
+                                <div className="cards-container">
+                                    {collegeList.map((college) => {
+                                        const tuitionCost = college.tuitionByMajor[selectedMajor as keyof typeof college.tuitionByMajor] || 8000
+                                        return (
+                                            <div
+                                                key={college.id}
+                                                className={`info-card ${selectedCollege === college.id ? 'selected' : ''}`}
+                                                onClick={() => setSelectedCollege(college.id)}
+                                            >
+                                                <h3>{college.name}</h3>
+                                                <p className="college-type">{college.baseNote}</p>
+                                                <p className="tuition">💰 ${tuitionCost.toLocaleString()}/year</p>
+
+                                                <div className="card-section">
+                                                    <h4>Benefits</h4>
+                                                    <ul>
+                                                        {college.benefits.map((b, i) => (
+                                                            <li key={i}>✓ {b}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                <div className="card-section">
+                                                    <h4>Considerations</h4>
+                                                    <ul>
+                                                        {college.cons.map((c, i) => (
+                                                            <li key={i}>⚠ {c}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                <div className="card-section">
+                                                    <h4>Common Career Paths</h4>
+                                                    <div className="job-paths">
+                                                        {college.jobPaths.map((jp, i) => (
+                                                            <span key={i} className="job-tag">{jp}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Major Selection */}
+                            <div className="selection-column">
+                                <h2>Select Your Major</h2>
+                                <div className="cards-container">
+                                    {majorList.map((major) => (
+                                        <div
+                                            key={major.id}
+                                            className={`info-card ${selectedMajor === major.id ? 'selected' : ''}`}
+                                            onClick={() => setSelectedMajor(major.id)}
+                                        >
+                                            <h3>{major.name}</h3>
+                                            {major.typical_salaries && (
+                                                <p className="cost-note">💰 {major.typical_salaries}</p>
+                                            )}
+                                            {major.job_outlook && (
+                                                <p className="cost-note">📈 Job Outlook: {major.job_outlook}</p>
+                                            )}
+
+                                            {major.description && (
+                                                <div className="card-section">
+                                                    <h4>Overview</h4>
+                                                    <p style={{ fontSize: '12px', color: '#666', margin: 0, lineHeight: '1.4' }}>
+                                                        {major.description.length > 150
+                                                            ? major.description.substring(0, 150) + '...'
+                                                            : major.description}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="selection-summary">
+                            <h3>Your Selection & Cost</h3>
+                            <p className="selection-text">{selectedCollegeData?.name} + {selectedMajorData?.name}</p>
+                            {selectedCollegeData && (
+                                <p className="cost-text">
+                                    💰 Annual Tuition: ${(selectedCollegeData.tuitionByMajor[selectedMajor as keyof typeof selectedCollegeData.tuitionByMajor] || 8000).toLocaleString()}/year
+                                </p>
+                            )}
+
+                            <div className="button-group">
+                                <button
+                                    onClick={() => {
+                                        setShowSetup(true)
+                                        setShowSelection(false)
+                                    }}
+                                    className="btn btn-primary"
+                                >
+                                    Continue to Setup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Show setup screen (sports, GPA, budget)
+    if (showSetup && !playerId) {
+        const scholarship = getScholarshipPercentage(highSchoolGPA)
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal setup-modal">
+                    <div className="setup-content">
+                        <h1>⚙️ Let's Set Up Your Game</h1>
+                        <p className="setup-intro">A few more details to personalize your experience</p>
+
+                        {/* Sports Question */}
+                        <div className="setup-section">
+                            <h2>Do you play college sports?</h2>
+                            <div className="button-group sports-group">
+                                <button
+                                    className={`btn btn-option ${playsCollege ? 'active' : ''}`}
+                                    onClick={() => setPlaysCollege(true)}
+                                >
+                                    ⚽ Yes, I play sports
+                                </button>
+                                <button
+                                    className={`btn btn-option ${!playsCollege ? 'active' : ''}`}
+                                    onClick={() => setPlaysCollege(false)}
+                                >
+                                    📚 No, I don't play sports
+                                </button>
+                            </div>
+                            <p className="option-hint">
+                                {playsCollege
+                                    ? '🎯 Playing sports boosts your network and health, but takes time away from studying.'
+                                    : '💡 More study time, but you\'ll need other ways to build connections.'}
+                            </p>
+                        </div>
+
+                        {/* High School GPA Question */}
+                        <div className="setup-section">
+                            <h2>What was your high school GPA?</h2>
+                            <p className="gpa-hint">This determines your eligibility for scholarships</p>
+                            <div className="gpa-input-group">
+                                <input
+                                    type="range"
+                                    min="2.0"
+                                    max="4.0"
+                                    step="0.1"
+                                    value={highSchoolGPA}
+                                    onChange={(e) => setHighSchoolGPA(parseFloat(e.target.value))}
+                                    className="gpa-slider"
+                                />
+                                <div className="gpa-display">
+                                    <span className="gpa-value">{highSchoolGPA.toFixed(1)}</span>
+                                    <span className="scholarship-badge">{scholarship}% scholarship</span>
+                                </div>
+                            </div>
+                            <div className="gpa-scale">
+                                <span>2.0</span>
+                                <span>3.0</span>
+                                <span>3.5</span>
+                                <span>4.0</span>
+                            </div>
+                        </div>
+
+                        {/* Budget Setup */}
+                        <div className="setup-section">
+                            <h2>Starting Budget</h2>
+                            <p className="budget-hint">💰 NYC freshman average savings: ${suggestedBudget.toLocaleString()}</p>
+                            <div className="budget-input-group">
+                                <input
+                                    type="number"
+                                    min="500"
+                                    max="50000"
+                                    step="100"
+                                    value={playerBudget}
+                                    onChange={(e) => handleBudgetChange(parseInt(e.target.value))}
+                                    className="budget-input"
+                                />
+                                <span className="budget-label">${playerBudget.toLocaleString()}</span>
+                            </div>
+                            {budgetWarning && (
+                                <p className="budget-warning">{budgetWarning}</p>
+                            )}
+                            <p className="budget-note">💡 Keep it realistic! This is your starting money. You'll need to earn more through part-time jobs.</p>
+                        </div>
+
+                        <div className="button-group">
+                            <button
+                                onClick={() => setShowSetup(false)}
+                                className="btn btn-secondary"
+                            >
+                                ← Back
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowHousingScreen(true)
+                                    setShowSetup(false)
+                                }}
+                                disabled={loading}
+                                className="btn btn-primary"
+                            >
+                                Continue to Housing →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Show housing selection screen (after setup, before creating player)
+    if (showHousingScreen && !playerId) {
+        // We need to use state variables from component level, not create new ones here
+        const handleCategorySelect = (categoryId: string) => {
+            const category = HOUSING_CATEGORIES.find(c => c.id === categoryId)
+            if (category && category.options.length === 1) {
+                // Single option - select directly
+                setSelectedHousingOption(category.options[0].id)
+                setSelectedHousingCategory(categoryId)
+                setShowHousingScreen(false)
+                handleStartGame()
+            } else {
+                // Multiple options - show options screen
+                setSelectedHousingCategory(categoryId)
+            }
+        }
+
+        const handleOptionSelect = (optionId: string) => {
+            setSelectedHousingOption(optionId)
+            setShowHousingScreen(false)
+            handleStartGame()
+        }
+
+        const selectedCategoryData = HOUSING_CATEGORIES.find(c => c.id === selectedHousingCategory)
+        const showHousingOptions = selectedHousingCategory && HOUSING_CATEGORIES.find(c => c.id === selectedHousingCategory)?.options.length! > 1
+
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal housing-modal">
+                    <div className="housing-content">
+                        {!showHousingOptions ? (
+                            <>
+                                <h1>🏠 Where Will You Live?</h1>
+                                <p className="housing-intro">Choose your housing carefully - it affects your budget, commute, stress, and social life!</p>
+
+                                <div className="housing-categories">
+                                    {HOUSING_CATEGORIES.map((category) => (
+                                        <div
+                                            key={category.id}
+                                            className={`housing-card ${selectedHousingCategory === category.id ? 'selected' : ''}`}
+                                            onClick={() => handleCategorySelect(category.id)}
+                                        >
+                                            <div className="housing-card-header">
+                                                <span className="housing-icon">{category.icon}</span>
+                                                <h3>{category.name}</h3>
+                                            </div>
+                                            <p className="housing-description">{category.description}</p>
+                                            {category.minLeaseSemesters > 0 && (
+                                                <p className="lease-info">
+                                                    📋 Min {category.minLeaseSemesters} sem{category.minLeaseSemesters > 1 ? 's' : ''} • ${category.penaltyFee.toLocaleString()} penalty
+                                                </p>
+                                            )}
+                                            <p className="housing-hint">
+                                                {category.options.length === 1
+                                                    ? '👉 Click to select'
+                                                    : `👉 ${category.options.length} options available`}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : selectedCategoryData && selectedCategoryData.options.length > 1 ? (
+                            <>
+                                <h1>🏠 {selectedCategoryData.name} Options</h1>
+                                <p className="housing-intro">Compare your choices:</p>
+
+                                <div className="housing-options">
+                                    {selectedCategoryData.options.map((option) => (
+                                        <div
+                                            key={option.id}
+                                            className={`option-card ${selectedHousingOption === option.id ? 'selected' : ''}`}
+                                            onClick={() => handleOptionSelect(option.id)}
+                                        >
+                                            <h3>{option.name}</h3>
+
+                                            <div className="option-stats">
+                                                <div className="stat">
+                                                    <span className="stat-icon">💰</span>
+                                                    <div>
+                                                        <p className="stat-label">Monthly Cost</p>
+                                                        <p className="stat-value">${option.monthlyCost.toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="stat">
+                                                    <span className="stat-icon">🚗</span>
+                                                    <div>
+                                                        <p className="stat-label">Commute</p>
+                                                        <p className="stat-value">{option.commuteMinutes} min</p>
+                                                    </div>
+                                                </div>
+                                                <div className="stat">
+                                                    <span className="stat-icon">😟</span>
+                                                    <div>
+                                                        <p className="stat-label">Stress Level</p>
+                                                        <p className="stat-value">{option.stressLevel}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="option-details">
+                                                <div>
+                                                    <h4>✓ Benefits</h4>
+                                                    <ul>
+                                                        {option.benefits.map((b, i) => (
+                                                            <li key={i}>{b}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <h4>⚠ Considerations</h4>
+                                                    <ul>
+                                                        {option.cons.map((c, i) => (
+                                                            <li key={i}>{c}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); handleOptionSelect(option.id) }}>
+                                                Select this housing
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : null}
+
+                        <div className="button-group">
+                            <button
+                                onClick={() => {
+                                    if (showHousingOptions) {
+                                        setSelectedHousingCategory(null)
+                                    } else {
+                                        setShowSetup(true)
+                                        setShowHousingScreen(false)
+                                    }
+                                }}
+                                className="btn btn-secondary"
+                            >
+                                ← Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (loading || (playerId && tutorials.length === 0)) {
         return (
             <div className="onboarding-container">
                 <div className="onboarding-modal">

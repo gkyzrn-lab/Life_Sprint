@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from api.deps import require_player
 from catalogs.colleges import COLLEGES
+from catalogs.majors import MAJORS
 from academics.curriculum import CURRICULUM
 
 from wellbeing.time_budget import compute_weekly_time_load
@@ -22,6 +23,12 @@ def _semester_tuition(player) -> float:
     if not college:
         return 0.0
     yearly = float(college.get("base_tuition_per_year", 0.0))
+    
+    # Apply major-specific tuition multiplier
+    major = MAJORS.get(player.major_id)
+    if major and "tuition_multiplier" in major:
+        yearly *= float(major["tuition_multiplier"])
+    
     return yearly / 2.0  # 2 semesters/year
 
 

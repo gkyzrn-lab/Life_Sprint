@@ -67,8 +67,8 @@ class TaxMythFact(BaseModel):
 TAX_BRACKETS_2024: Dict[str, List[Dict]] = {
     "single": [
         {"min": 0, "max": 11000, "rate": 0.10},
-        {"min": 11000, "max": 44725, "rate": 0.12},
-        {"min": 44725, "max": 95375, "rate": 0.22},
+        {"min": 11000, "max": 50000, "rate": 0.12},
+        {"min": 50000, "max": 95375, "rate": 0.22},
         {"min": 95375, "max": 182100, "rate": 0.24},
         {"min": 182100, "max": 231250, "rate": 0.32},
         {"min": 231250, "max": 578125, "rate": 0.35},
@@ -93,209 +93,115 @@ STANDARD_DEDUCTION_2024 = {
 }
 
 
-# Tax terms
-TAX_TERMS: Dict[str, TaxTerm] = {
-    "gross_income": TaxTerm(
-        term_id="gross_income",
-        term_name="Gross Income",
-        definition="Total income from all sources BEFORE deductions or taxes.",
-        example="Salary of $50,000 + side gig $5,000 = $55,000 gross income",
-        importance="critical"
-    ),
-    
-    "adjusted_gross_income": TaxTerm(
-        term_id="adjusted_gross_income",
-        term_name="Adjusted Gross Income (AGI)",
-        definition="Gross income minus specific deductions like student loan interest, IRA contributions, etc.",
-        example="$55,000 gross income - $2,500 student loan interest = $52,500 AGI",
-        importance="critical"
-    ),
-    
-    "taxable_income": TaxTerm(
-        term_id="taxable_income",
-        term_name="Taxable Income",
-        definition="AGI minus either standard or itemized deduction. This is the income that gets taxed.",
-        example="$52,500 AGI - $13,850 standard deduction = $38,650 taxable income",
-        importance="critical"
-    ),
-    
-    "marginal_tax_rate": TaxTerm(
-        term_id="marginal_tax_rate",
-        term_name="Marginal Tax Rate",
-        definition="The tax rate on your LAST dollar earned. Not your overall rate! The bracket your income falls into.",
-        example="$38,650 income falls in 22% bracket = 22% marginal rate. But you don't pay 22% on all income.",
-        importance="critical"
-    ),
-    
-    "effective_tax_rate": TaxTerm(
-        term_id="effective_tax_rate",
-        term_name="Effective Tax Rate",
-        definition="Actual percentage of total income that goes to taxes. Usually MUCH lower than marginal rate.",
-        example="$50,000 salary, pay $5,000 in taxes = 10% effective rate (even though marginal rate is 22%)",
-        importance="critical"
-    ),
-    
-    "standard_deduction": TaxTerm(
-        term_id="standard_deduction",
-        term_name="Standard Deduction",
-        definition="Fixed deduction everyone can take. In 2024: $13,850 single, $27,700 married. Simpler than itemizing.",
-        example="Single, $50,000 income: Subtract $13,850 standard deduction = $36,150 taxable",
-        importance="critical"
-    ),
-    
-    "itemized_deductions": TaxTerm(
-        term_id="itemized_deductions",
-        term_name="Itemized Deductions",
-        definition="When you list out specific deductions (mortgage interest, property taxes, charitable donations) instead of standard deduction.",
-        example="Home owner: Mortgage interest $12,000 + property tax $5,000 + charity $2,000 = $19,000 itemized (better than $13,850 standard)",
-        importance="important"
-    ),
-    
-    "tax_credit": TaxTerm(
-        term_id="tax_credit",
-        term_name="Tax Credit",
-        definition="Dollar-for-dollar reduction in taxes owed. $1 credit = $1 less tax (much better than deduction!).",
-        example="$2,000 child tax credit = $2,000 off your tax bill. $2,000 deduction = only saves $2,000 × your rate (~$400)",
-        importance="critical"
-    ),
-    
-    "fica_taxes": TaxTerm(
-        term_id="fica_taxes",
-        term_name="FICA Taxes",
-        definition="Social Security (6.2%) + Medicare (1.45%) = 7.65% of wages. Employer matches it.",
-        example="$50,000 salary: Pay $3,825 in FICA. Employer pays another $3,825. Total: $7,650/year.",
-        importance="critical"
-    ),
-    
-    "w4_form": TaxTerm(
-        term_id="w4_form",
-        term_name="W-4 Form",
-        definition="Form you fill out with employer to set tax withholding. Controls how much tax is taken from paycheck.",
-        example="Claim 0 dependents = more withholding = bigger refund. Claim 2 = less withholding = smaller refund.",
-        importance="important"
-    ),
-    
-    "1099_income": TaxTerm(
-        term_id="1099_income",
-        term_name="1099 Income (Self-Employment)",
-        definition="Income from side gigs, freelancing, etc. You're responsible for ALL taxes (no employer to match FICA).",
-        example="Earn $10,000 from Uber: Pay income tax + 15.3% self-employment tax (~$1,530). Not just ~$1,000 like W-2.",
-        importance="critical"
-    ),
-    
-    "earned_income_credit": TaxTerm(
-        term_id="earned_income_credit",
-        term_name="Earned Income Credit (EITC)",
-        definition="Tax credit for low-to-moderate income workers. Can be up to $3,995 for single, $6,932 for families.",
-        example="Single, $25,000 income: Qualify for $2,000 EITC. Tax bill is $0, get $2,000 refund!",
-        importance="important"
-    ),
-    
-    "capital_gains": TaxTerm(
-        term_id="capital_gains",
-        term_name="Capital Gains",
-        definition="Profit from selling stocks, real estate, etc. Taxed at lower rate than regular income (0%, 15%, or 20%).",
-        example="Buy stock for $1,000, sell for $1,500: $500 gain taxed at 15% = $75 tax. Regular income at same rate = ~$110 tax.",
-        importance="important"
-    ),
-    
-    "estimated_taxes": TaxTerm(
-        term_id="estimated_taxes",
-        term_name="Estimated Taxes",
-        definition="Quarterly tax payments you make if you have self-employment or side gig income (no employer withholding).",
-        example="Earn $20,000 from freelancing: Make 4 quarterly payments of ~$800-1,000 throughout year instead of surprise bill in April.",
-        importance="important"
-    ),
+# Tax terms (simple dicts for API/tests)
+TAX_TERMS: Dict[str, Dict[str, str]] = {
+    "gross_income": {
+        "term": "Gross Income",
+        "definition": "Total income from all sources BEFORE deductions or taxes.",
+        "example": "Salary of $50,000 + side gig $5,000 = $55,000 gross income",
+    },
+    "taxable_income": {
+        "term": "Taxable Income",
+        "definition": "Income after deductions that is subject to tax.",
+        "example": "$52,500 AGI - $13,850 standard deduction = $38,650 taxable income",
+    },
+    "marginal_rate": {
+        "term": "Marginal Rate",
+        "definition": "The tax rate on your last dollar earned.",
+        "example": "$50,000 income falls into 22% bracket, so marginal rate is 22%.",
+    },
+    "effective_rate": {
+        "term": "Effective Rate",
+        "definition": "Overall percentage of income paid in taxes.",
+        "example": "$50,000 income, $5,000 tax = 10% effective rate.",
+    },
+    "standard_deduction": {
+        "term": "Standard Deduction",
+        "definition": "Fixed deduction everyone can take.",
+        "example": "Single filer subtracts $13,850 from income.",
+    },
+    "itemized_deductions": {
+        "term": "Itemized Deductions",
+        "definition": "Specific deductions listed instead of standard deduction.",
+        "example": "Mortgage interest + property taxes + charity = itemized total.",
+    },
+    "tax_credit": {
+        "term": "Tax Credit",
+        "definition": "Dollar-for-dollar reduction in taxes owed.",
+        "example": "$1,000 credit reduces tax bill by $1,000.",
+    },
+    "fica": {
+        "term": "FICA Taxes",
+        "definition": "Social Security (6.2%) + Medicare (1.45%).",
+        "example": "$50,000 salary -> $3,825 FICA.",
+    },
+    "w4": {
+        "term": "W-4 Form",
+        "definition": "Form that sets paycheck withholding.",
+        "example": "Fewer allowances = bigger refund.",
+    },
+    "1099_income": {
+        "term": "1099 Income",
+        "definition": "Self-employment income with no employer withholding.",
+        "example": "Freelance income requires quarterly taxes.",
+    },
+    "earned_income_credit": {
+        "term": "Earned Income Credit",
+        "definition": "Refundable credit for low-to-moderate earners.",
+        "example": "Qualify for $2,000 EITC and get a refund.",
+    },
+    "estimated_taxes": {
+        "term": "Estimated Taxes",
+        "definition": "Quarterly payments for self-employment income.",
+        "example": "Pay quarterly to avoid a big April bill.",
+    },
 }
 
 
-# Tax myths
-TAX_MYTHS: Dict[str, TaxMythFact] = {
-    "myth_refund_free_money": TaxMythFact(
-        myth_id="myth_refund_free_money",
-        myth="Getting a big tax refund is great - it means you're getting money back!",
-        fact="A refund just means you overpaid taxes (lent money to government interest-free). A $3,000 refund = $3,000 you could have earned interest on all year. Adjust W-4 to get refund closer to $0.",
-        financial_impact="$3,000 refund at 4% interest = $120/year you're losing"
-    ),
-    
-    "myth_deduction_better_than_credit": TaxMythFact(
-        myth_id="myth_deduction_better_than_credit",
-        myth="A tax deduction and tax credit are the same thing.",
-        fact="$1 credit = $1 off your taxes. $1 deduction = only saves ~$0.22-$0.37 depending on bracket. Credits are MUCH better.",
-        financial_impact="$1,000 credit saves $1,000. $1,000 deduction saves ~$220"
-    ),
-    
-    "myth_side_gig_taxes": TaxMythFact(
-        myth_id="myth_side_gig_taxes",
-        myth="You don't owe taxes on side gig income under $600.",
-        fact="WRONG. You owe taxes on ALL income. 1099 threshold is just when companies report it. Failing to report is tax evasion (illegal).",
-        financial_impact="$5,000 unreported side gig income = ~$1,200 unpaid taxes + penalties/interest"
-    ),
-    
-    "myth_cash_income_untaxed": TaxMythFact(
-        myth_id="myth_cash_income_untaxed",
-        myth="Cash income is untaxed because there's no record.",
-        fact="WRONG. You're legally required to report all income, cash or not. Getting caught = penalties + back interest (~30% total).",
-        financial_impact="$10,000 cash income: Owe $2,200 tax. Don't report: Owe $2,200 + 20% penalty + interest = ~$3,000"
-    ),
-    
-    "myth_charitable_donations": TaxMythFact(
-        myth_id="myth_charitable_donations",
-        myth="All charitable donations give you a tax break.",
-        fact="Only itemizers benefit. Most people use standard deduction. If deduction < itemized ($13,850 single), you get $0 benefit.",
-        financial_impact="Donate $5,000 without itemizing = $0 tax benefit. Donate with itemizing = $1,150 tax benefit (22% rate)"
-    ),
-    
-    "myth_no_w2_no_tax": TaxMythFact(
-        myth_id="myth_no_w2_no_tax",
-        myth="If you don't get a W-2, you don't have to pay taxes.",
-        fact="You owe taxes on all income sources. 1099, cash, side gigs - all taxable. Report it or face penalties.",
-        financial_impact="Fail to report $15,000 1099 income = $3,300 unpaid tax + 20% penalty = ~$4,000 owed"
-    ),
-    
-    "myth_dependent_exemption": TaxMythFact(
-        myth_id="myth_dependent_exemption",
-        myth="Having a dependent exempts you from paying federal taxes.",
-        fact="Dependents give you credits/deductions, not an exemption from taxes. You still owe taxes; dependents just reduce them.",
-        financial_impact="Each child = $2,000 child tax credit (not exemption from taxes entirely)"
-    ),
+# Tax myths (simple dicts)
+TAX_MYTHS: Dict[str, Dict[str, str]] = {
+    "myth_refund_good": {
+        "myth": "Getting a big tax refund is great - it means you're getting money back!",
+        "fact": "FALSE. A refund means you overpaid and gave the government an interest-free loan.",
+    },
+    "myth_deduction_vs_credit": {
+        "myth": "A tax deduction and tax credit are the same thing.",
+        "fact": "FALSE. A credit reduces taxes dollar-for-dollar; a deduction only reduces taxable income.",
+    },
+    "myth_side_gig_taxes": {
+        "myth": "You don't owe taxes on side gig income under $600.",
+        "fact": "FALSE. You owe taxes on all income, regardless of 1099 threshold.",
+    },
+    "myth_cash_income_untaxed": {
+        "myth": "Cash income is untaxed because there's no record.",
+        "fact": "FALSE. Cash income is still taxable and must be reported.",
+    },
+    "myth_charitable_donations": {
+        "myth": "All charitable donations give you a tax break.",
+        "fact": "Only itemizers benefit; most people use the standard deduction.",
+    },
+    "myth_no_w2_no_tax": {
+        "myth": "If you don't get a W-2, you don't have to pay taxes.",
+        "fact": "FALSE. 1099, cash, and side gigs are taxable.",
+    },
+    "myth_dependent_exemption": {
+        "myth": "Having a dependent exempts you from paying federal taxes.",
+        "fact": "Dependents reduce taxes but do not exempt you from them.",
+    },
 }
 
 
 def calculate_taxable_income(
     gross_income: float,
     filing_status: str = "single",
-    itemized_deductions: float = 0,
-    agi_adjustments: float = 0
-) -> Dict[str, float]:
-    """Calculate taxable income.
-    
-    Returns:
-        {
-            "gross_income": ...,
-            "agi": ...,
-            "deduction_used": ...,
-            "taxable_income": ...
-        }
-    """
-    
-    # Calculate AGI
-    agi = gross_income - agi_adjustments
-    
-    # Determine deduction
-    standard_ded = STANDARD_DEDUCTION_2024.get(filing_status, STANDARD_DEDUCTION_2024["single"])
-    deduction = max(standard_ded, itemized_deductions)
-    
-    # Calculate taxable income
-    taxable = max(0, agi - deduction)
-    
-    return {
-        "gross_income": gross_income,
-        "agi": agi,
-        "deduction_amount": deduction,
-        "deduction_type": "itemized" if itemized_deductions > standard_ded else "standard",
-        "taxable_income": taxable
-    }
+    deductions: Optional[float] = None,
+) -> float:
+    """Calculate taxable income as a single numeric value."""
+    if deductions is None:
+        deduction = STANDARD_DEDUCTION_2024.get(filing_status, STANDARD_DEDUCTION_2024["single"])
+    else:
+        deduction = deductions
+    return gross_income - deduction
 
 
 def calculate_income_tax(taxable_income: float, filing_status: str = "single") -> float:
@@ -307,19 +213,17 @@ def calculate_income_tax(taxable_income: float, filing_status: str = "single") -
     for bracket in brackets:
         if taxable_income <= bracket["min"]:
             break
-        
-        # Income in this bracket
-        bracket_min = max(taxable_income, bracket["min"])
-        bracket_max = min(taxable_income, bracket["max"])
-        
-        if bracket_min < bracket_max:
-            income_in_bracket = bracket_max - bracket_min
+
+        bracket_min = bracket["min"]
+        bracket_max = bracket["max"]
+        income_in_bracket = min(taxable_income, bracket_max) - bracket_min
+        if income_in_bracket > 0:
             tax += income_in_bracket * bracket["rate"]
     
     return max(0, tax)
 
 
-def calculate_fica_taxes(w2_income: float) -> Dict[str, float]:
+def calculate_fica_taxes(gross_income: float) -> Dict[str, float]:
     """Calculate Social Security and Medicare taxes."""
     
     ss_rate = 0.062
@@ -327,29 +231,29 @@ def calculate_fica_taxes(w2_income: float) -> Dict[str, float]:
     ss_wage_cap = 168600  # 2024
     
     # Social Security (capped at wage cap)
-    ss_wages = min(w2_income, ss_wage_cap)
+    ss_wages = min(gross_income, ss_wage_cap)
     ss_tax = ss_wages * ss_rate
     
     # Medicare (no cap)
-    medicare_tax = w2_income * medicare_rate
+    medicare_tax = gross_income * medicare_rate
     
     # Additional Medicare if income > $200,000 (single)
     additional_medicare_rate = 0.009
-    if w2_income > 200000:
-        additional_medicare_tax = (w2_income - 200000) * additional_medicare_rate
+    if gross_income > 200000:
+        additional_medicare_tax = (gross_income - 200000) * additional_medicare_rate
         medicare_tax += additional_medicare_tax
     
     total_fica = ss_tax + medicare_tax
     
     return {
-        "social_security_tax": ss_tax,
-        "medicare_tax": medicare_tax,
+        "social_security": ss_tax,
+        "medicare": medicare_tax,
         "total_fica": total_fica,
-        "fica_rate": round((total_fica / w2_income) * 100, 2) if w2_income > 0 else 0
+        "fica_rate": round((total_fica / gross_income) * 100, 2) if gross_income > 0 else 0
     }
 
 
-def calculate_self_employment_tax(self_employment_income: float) -> Dict[str, float]:
+def calculate_self_employment_tax(self_employment_income: float) -> float:
     """Calculate self-employment tax (1099 income)."""
     
     # SE tax is FICA for self-employed (you pay both sides)
@@ -363,29 +267,25 @@ def calculate_self_employment_tax(self_employment_income: float) -> Dict[str, fl
     # Can deduct half of SE tax
     se_tax_deduction = total_se_tax / 2
     
-    return {
-        "self_employment_tax": total_se_tax,
-        "se_tax_deduction": se_tax_deduction,
-        "effective_rate": round((total_se_tax / self_employment_income) * 100, 2)
-    }
+    return total_se_tax
 
 
-def get_term(term_id: str) -> Optional[TaxTerm]:
+def get_term(term_id: str) -> Optional[Dict[str, str]]:
     """Get a tax term."""
     return TAX_TERMS.get(term_id)
 
 
-def get_all_terms() -> List[TaxTerm]:
+def get_all_terms() -> List[Dict[str, str]]:
     """Get all tax terms."""
     return list(TAX_TERMS.values())
 
 
-def get_myth(myth_id: str) -> Optional[TaxMythFact]:
+def get_myth(myth_id: str) -> Optional[Dict[str, str]]:
     """Get a tax myth."""
     return TAX_MYTHS.get(myth_id)
 
 
-def get_all_myths() -> List[TaxMythFact]:
+def get_all_myths() -> List[Dict[str, str]]:
     """Get all tax myths."""
     return list(TAX_MYTHS.values())
 

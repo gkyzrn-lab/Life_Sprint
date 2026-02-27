@@ -108,6 +108,12 @@ try:
 except Exception:
     pass
 
+try:
+    from api.router_store import router as store_router
+    app.include_router(store_router)
+except Exception:
+    pass
+
 
 @app.get("/")
 def root():

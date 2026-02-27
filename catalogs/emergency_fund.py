@@ -39,23 +39,11 @@ class EmergencyScenario(BaseModel):
 class EmergencyFundChallenge(BaseModel):
     """A challenge to build emergency fund."""
     challenge_id: str
-    
-    # Parameters
-    starting_balance: float
-    starting_emergency_fund: float
-    monthly_income: float
-    monthly_expenses: float
-    
-    # Events that will occur
-    events: List[EmergencyEvent] = Field(default_factory=list)
-    event_schedule: List[int] = Field(default_factory=list)  # Months when events occur
-    
-    # Results
-    final_balance: float = 0
-    final_emergency_fund: float = 0
-    total_debt_accrued: float = 0
-    events_handled: int = 0
-    events_caused_debt: int = 0
+    difficulty: Literal["easy", "medium", "hard"] = "medium"
+    months: int = 12
+    monthly_savings_goal: float = 0
+    starting_balance: float = 0
+    potential_events: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class EmergencyOutcome(BaseModel):
@@ -77,275 +65,166 @@ class EmergencyOutcome(BaseModel):
     lesson: str
 
 
-# Emergency events database
-EMERGENCY_EVENTS: Dict[str, EmergencyEvent] = {
-    "car_transmission": EmergencyEvent(
-        event_id="car_transmission",
-        event_type="car_repair",
-        name="Transmission Failure",
-        description="Your car's transmission fails. It's dead on the highway. You need a new/rebuilt transmission.",
-        typical_cost=1500,
-        cost_range=(1000, 3000),
-        urgency="immediate",
-        consequence_if_no_fund="Take out car loan at 8% APR or put $1,500 on credit card at 22% APR. Can't use car until fixed.",
-        debt_accrued=300,  # Interest per month until paid
-        educational_value="$1,500 repair now vs. no emergency fund = $300+ in interest charges if you borrow.",
-        prevention_tip="Keep car maintained. Regular oil changes ($30) prevent $1,500+ repairs."
-    ),
-    
-    "medical_emergency": EmergencyEvent(
-        event_id="medical_emergency",
-        event_type="medical",
-        name="Emergency Room Visit",
-        description="You have sudden severe pain and need to go to the ER. Diagnosis: appendicitis. Surgery required.",
-        typical_cost=5000,
-        cost_range=(3000, 10000),
-        urgency="immediate",
-        consequence_if_no_fund="Medical debt sent to collections. Your credit score drops 100+ points. Bill collector calls start.",
-        debt_accrued=200,  # Monthly interest and fees
-        educational_value="Medical debt is the #1 cause of bankruptcy. If uninsured, ER + surgery = $5,000-$15,000.",
-        prevention_tip="Get health insurance. Even basic plans cap out-of-pocket costs at $5,000-$7,000."
-    ),
-    
-    "apartment_flood": EmergencyEvent(
-        event_id="apartment_flood",
-        event_type="home_repair",
-        name="Apartment Flood (Neighbor's Leak)",
-        description="Neighbor's apartment floods, water leaks into yours. Your furniture, electronics, and clothes are damaged.",
-        typical_cost=2000,
-        cost_range=(1500, 3000),
-        urgency="immediate",
-        consequence_if_no_fund="If you have renters insurance: $1,000-$2,000 (pay deductible). Without: YOU pay everything. Landlord won't help.",
-        debt_accrued=100,  # If you have to replace furniture slowly
-        educational_value="Renters insurance costs $15-30/month but covers $20,000-$30,000 in belongings. Worth it.",
-        prevention_tip="Get renters insurance. Costs ~$20/month. Covers theft, fire, water damage, and liability."
-    ),
-    
-    "laptop_dies": EmergencyEvent(
-        event_id="laptop_dies",
-        event_type="travel",
-        name="Laptop Dies (For Work/School)",
-        description="Your laptop stops working completely. You need it for work/school projects and remote work.",
-        typical_cost=800,
-        cost_range=(600, 1200),
-        urgency="within_week",
-        consequence_if_no_fund="Miss work deadlines. Miss school assignments. Credit card debt at 22% APR.",
-        debt_accrued=15,  # Monthly interest
-        educational_value="Technology emergencies happen. Budget laptops cost $600-800. Emergency fund prevents debt.",
-        prevention_tip="Assume your devices will break. Allocate $50-100/month to tech replacement fund."
-    ),
-    
-    "job_loss": EmergencyEvent(
-        event_id="job_loss",
-        event_type="job_loss",
-        name="Unexpected Job Loss",
-        description="You're laid off without warning. No severance. You need to cover living expenses while finding a new job.",
-        typical_cost=3000,  # Monthly expenses
-        cost_range=(2000, 5000),
-        urgency="immediate",
-        consequence_if_no_fund="Use credit cards. Rack up $5,000-10,000 in debt. Then scramble to pay it back with new job.",
-        debt_accrued=400,  # Credit card interest
-        educational_value="3-6 months emergency fund = months of security. Average job search: 3 months. Safety net is essential.",
-        prevention_tip="Build 3-6 months of expenses. Saves you from $5,000+ in credit card debt during job transition."
-    ),
-    
-    "dental_emergency": EmergencyEvent(
-        event_id="dental_emergency",
-        event_type="dental",
-        name="Emergency Dental Surgery",
-        description="Severe tooth infection. Needs root canal + crown. Extremely painful. Infection spreading.",
-        typical_cost=1200,
-        cost_range=(800, 2000),
-        urgency="immediate",
-        consequence_if_no_fund="Put on credit card. $1,200 at 22% APR = paying interest for 1+ year.",
-        debt_accrued=22,  # Monthly interest
-        educational_value="Dental work is expensive. If uninsured, budget $1,000-2,000/year for emergency dental.",
-        prevention_tip="Dental insurance: ~$100-200/year. Covers emergencies up to 50%. ROI is huge if you have events."
-    ),
-    
-    "pet_emergency": EmergencyEvent(
-        event_id="pet_emergency",
-        event_type="pet",
-        name="Dog Emergency Surgery",
-        description="Your dog gets hit by a car. Needs emergency surgery and hospitalization. Vet says $3,000-5,000.",
-        typical_cost=3500,
-        cost_range=(2000, 5000),
-        urgency="immediate",
-        consequence_if_no_fund="Can't afford surgery. Pet dies or suffers permanent disability. Massive guilt and regret.",
-        debt_accrued=200,  # If you finance with credit card
-        educational_value="Pet ownership has hidden costs. Vets don't negotiate like doctors. Pet insurance costs $30-50/month.",
-        prevention_tip="Pet insurance or pet emergency fund. Saves you from devastating choice: debt or losing your pet."
-    ),
-    
-    "home_repair_roof": EmergencyEvent(
-        event_id="home_repair_roof",
-        event_type="home_repair",
-        name="Roof Leak (Water Damage)",
-        description="Storm damages roof. Water leaks into attic and walls. Mold starting to grow. Needs immediate repair.",
-        typical_cost=2500,
-        cost_range=(2000, 5000),
-        urgency="immediate",
-        consequence_if_no_fund="Water damage worsens. Mold spreads. Repair costs escalate. Eventually $8,000+.",
-        debt_accrued=150,  # Monthly interest if financed
-        educational_value="Home repairs are expensive and unavoidable. ~1% of home value/year for maintenance.",
-        prevention_tip="If you own a home: allocate 1% of home value annually for emergency repairs/maintenance."
-    ),
-    
-    "medical_deductible": EmergencyEvent(
-        event_id="medical_deductible",
-        event_type="medical",
-        name="Hospital Stay (Hit Deductible)",
-        description="You get hospitalized for 3 days. Tests, medications, doctors. Insurance covers 80% after deductible.",
-        typical_cost=2000,
-        cost_range=(1500, 3000),
-        urgency="immediate",
-        consequence_if_no_fund="Medical debt. Collections agency. Credit score damage that lasts 7 years.",
-        debt_accrued=100,
-        educational_value="Insurance doesn't mean free care. Deductibles are typically $1,000-$5,000 per year.",
-        prevention_tip="Budget your deductible as an emergency. If deductible is $3,000, treat it like mandatory emergency fund."
-    ),
-    
-    "travel_emergency": EmergencyEvent(
-        event_id="travel_emergency",
-        event_type="travel",
-        name="Flight Home for Family Emergency",
-        description="Parent has heart attack. You need to fly home immediately. Last-minute flight is expensive.",
-        typical_cost=600,
-        cost_range=(400, 1000),
-        urgency="immediate",
-        consequence_if_no_fund="Can't afford flight. Miss seeing parent in hospital. Guilt lasts forever.",
-        debt_accrued=0,  # Family usually helps, but emotional cost is high
-        educational_value="Family emergencies happen. You can't predict them but can prepare financially.",
-        prevention_tip="Everyone should have $500-1,000 accessible for family emergencies."
-    ),
+EMERGENCY_EVENTS: Dict[str, Dict[str, Any]] = {
+    "car_transmission": {
+        "event_name": "Transmission Failure",
+        "description": "Your car's transmission fails and needs urgent repair.",
+        "min_cost": 1000,
+        "max_cost": 3000,
+        "event_type": "car_repair"
+    },
+    "medical_emergency": {
+        "event_name": "Emergency Room Visit",
+        "description": "Unexpected ER visit and treatment required.",
+        "min_cost": 3000,
+        "max_cost": 10000,
+        "event_type": "medical"
+    },
+    "apartment_flood": {
+        "event_name": "Apartment Flood",
+        "description": "Water damage to furniture and electronics.",
+        "min_cost": 1500,
+        "max_cost": 3000,
+        "event_type": "home_repair"
+    },
+    "laptop_dies": {
+        "event_name": "Laptop Dies",
+        "description": "You need a replacement laptop for work/school.",
+        "min_cost": 600,
+        "max_cost": 1200,
+        "event_type": "travel"
+    },
+    "job_loss": {
+        "event_name": "Unexpected Job Loss",
+        "description": "Income stops while you search for a new job.",
+        "min_cost": 2000,
+        "max_cost": 5000,
+        "event_type": "job_loss"
+    },
+    "dental_emergency": {
+        "event_name": "Emergency Dental Surgery",
+        "description": "Urgent dental procedure required.",
+        "min_cost": 800,
+        "max_cost": 2000,
+        "event_type": "dental"
+    },
+    "pet_emergency": {
+        "event_name": "Pet Emergency",
+        "description": "Emergency vet visit and surgery.",
+        "min_cost": 2000,
+        "max_cost": 5000,
+        "event_type": "pet"
+    },
+    "home_repair": {
+        "event_name": "Home Repair",
+        "description": "Unexpected home repair expense.",
+        "min_cost": 2000,
+        "max_cost": 5000,
+        "event_type": "home_repair"
+    },
+    "medical_deductible": {
+        "event_name": "Medical Deductible",
+        "description": "You hit your insurance deductible.",
+        "min_cost": 1500,
+        "max_cost": 3000,
+        "event_type": "medical"
+    },
+    "travel_emergency": {
+        "event_name": "Family Travel Emergency",
+        "description": "Last-minute travel for a family emergency.",
+        "min_cost": 400,
+        "max_cost": 1000,
+        "event_type": "travel"
+    },
 }
 
 
 def create_emergency_fund_challenge(
-    starting_balance: float,
-    monthly_income: float,
-    monthly_expenses: float,
+    difficulty: Literal["easy", "medium", "hard"],
+    monthly_savings_goal: float,
     months: int = 12,
-    difficulty: Literal["easy", "medium", "hard"] = "medium"
+    starting_balance: float = 0
 ) -> EmergencyFundChallenge:
     """Create an emergency fund building challenge."""
-    
-    challenge = EmergencyFundChallenge(
-        challenge_id=f"challenge_{starting_balance}_{difficulty}",
-        starting_balance=starting_balance,
-        starting_emergency_fund=0,
-        monthly_income=monthly_income,
-        monthly_expenses=monthly_expenses,
-        events=[],
-        event_schedule=[]
-    )
-    
-    # Generate random events based on difficulty
     if difficulty == "easy":
-        event_chances = {"month_3": 0.5, "month_6": 0.4, "month_12": 0.3}
-        event_pool = ["laptop_dies", "car_transmission"]
+        event_ids = ["laptop_dies", "car_transmission"]
     elif difficulty == "medium":
-        event_chances = {"month_3": 0.6, "month_6": 0.6, "month_9": 0.5, "month_12": 0.6}
-        event_pool = ["laptop_dies", "car_transmission", "dental_emergency", "apartment_flood"]
-    else:  # hard
-        event_chances = {"month_2": 0.8, "month_5": 0.7, "month_8": 0.7, "month_12": 0.8}
-        event_pool = list(EMERGENCY_EVENTS.keys())
-    
-    for month_check, probability in event_chances.items():
-        if random.random() < probability:
-            month = int(month_check.split("_")[1])
-            event_id = random.choice(event_pool)
-            challenge.events.append(EMERGENCY_EVENTS[event_id])
-            challenge.event_schedule.append(month)
-    
-    return challenge
+        event_ids = ["laptop_dies", "car_transmission", "dental_emergency"]
+    else:
+        event_ids = list(EMERGENCY_EVENTS.keys())
+
+    potential_events = [EMERGENCY_EVENTS[eid] for eid in event_ids]
+    return EmergencyFundChallenge(
+        challenge_id=f"challenge_{difficulty}_{months}",
+        difficulty=difficulty,
+        months=months,
+        monthly_savings_goal=monthly_savings_goal,
+        starting_balance=starting_balance,
+        potential_events=potential_events,
+    )
 
 
 def simulate_emergency_fund_building(
-    starting_balance: float,
-    monthly_income: float,
-    monthly_expenses: float,
-    emergency_fund_target: float,
-    monthly_savings_rate: float = 0.20,  # 20% of income
-    events: List[tuple] = None  # (month, cost)
-) -> Dict:
-    """Simulate building emergency fund over time.
-    
-    Returns month-by-month breakdown.
-    """
-    
+    monthly_savings: float,
+    starting_balance: float = 0,
+    months: int = 12,
+    difficulty: Literal["easy", "medium", "hard"] = "medium",
+) -> Dict[str, Any]:
+    """Simulate building emergency fund over time."""
     balance = starting_balance
-    emergency_fund = 0
-    total_debt = 0
-    month_breakdown = []
-    events_by_month = {month: cost for month, cost in (events or [])}
-    
-    for month in range(1, 13):
-        # Income
-        available = monthly_income - monthly_expenses
-        
-        # Allocate to emergency fund
-        emergency_savings = available * monthly_savings_rate
-        emergency_fund += emergency_savings
-        balance += emergency_savings
-        
-        # Check for emergency event
-        event_occurred = False
-        event_name = None
+    monthly_breakdown = []
+
+    if difficulty == "easy":
+        event_months = [6]
+        event_ids = ["laptop_dies", "travel_emergency"]
+    elif difficulty == "medium":
+        event_months = [4, 9]
+        event_ids = ["laptop_dies", "dental_emergency", "car_transmission"]
+    else:
+        event_months = [2, 4, 6, 8, 10]
+        event_ids = list(EMERGENCY_EVENTS.keys())
+
+    event_months = [m for m in event_months if m <= months]
+
+    total_emergencies = 0
+    for month in range(1, months + 1):
+        balance += monthly_savings
         event_cost = 0
-        
-        if month in events_by_month:
-            event_occurred = True
-            event_cost = events_by_month[month]
-            event_name = "Emergency Event"
-            
-            # Handle the emergency
-            if emergency_fund >= event_cost:
-                # Had enough saved
-                emergency_fund -= event_cost
-                balance -= event_cost
-            else:
-                # Had to go into debt
-                amount_short = event_cost - emergency_fund
-                total_debt += amount_short * 1.22  # Credit card interest
-                emergency_fund = 0
-                balance -= emergency_fund  # Use what was saved
-        
-        # Track month
-        month_breakdown.append({
+
+        if month in event_months:
+            event = EMERGENCY_EVENTS[event_ids[total_emergencies % len(event_ids)]]
+            event_cost = (event["min_cost"] + event["max_cost"]) / 2
+            balance -= event_cost
+            total_emergencies += 1
+
+        monthly_breakdown.append({
             "month": month,
-            "income": monthly_income,
-            "expenses": monthly_expenses,
-            "savings": emergency_savings,
-            "emergency_fund": emergency_fund,
-            "total_balance": balance,
-            "event_occurred": event_occurred,
+            "savings": monthly_savings,
+            "balance": balance,
             "event_cost": event_cost,
-            "total_debt_accumulated": total_debt
         })
-    
+
     return {
+        "total_saved": monthly_savings * months,
         "final_balance": balance,
-        "final_emergency_fund": emergency_fund,
-        "total_debt": total_debt,
-        "met_target": emergency_fund >= emergency_fund_target,
-        "months_breakdown": month_breakdown
+        "total_emergencies": total_emergencies,
+        "monthly_breakdown": monthly_breakdown,
     }
 
 
-def get_emergency_event(event_id: str) -> Optional[EmergencyEvent]:
+def get_emergency_event(event_id: str) -> Optional[Dict[str, Any]]:
     """Get a specific emergency event."""
     return EMERGENCY_EVENTS.get(event_id)
 
 
-def get_all_emergency_events() -> List[EmergencyEvent]:
+def get_all_emergency_events() -> List[Dict[str, Any]]:
     """Get all emergency events."""
     return list(EMERGENCY_EVENTS.values())
 
 
-def get_emergency_by_type(event_type: str) -> List[EmergencyEvent]:
+def get_emergency_by_type(event_type: str) -> List[Dict[str, Any]]:
     """Get emergency events by type."""
-    return [e for e in EMERGENCY_EVENTS.values() if e.event_type == event_type]
+    return [e for e in EMERGENCY_EVENTS.values() if e.get("event_type") == event_type]
 
 
 def calculate_emergency_fund_target(monthly_expenses: float, months: int = 3) -> float:
@@ -357,23 +236,17 @@ def calculate_emergency_fund_target(monthly_expenses: float, months: int = 3) ->
 
 
 def get_emergency_fund_progress(
-    current_fund: float,
-    monthly_expenses: float
+    current_savings: float,
+    monthly_expenses: float,
+    target_months: int = 3,
 ) -> Dict[str, Any]:
     """Get progress toward emergency fund goals."""
-    
-    target_3m = monthly_expenses * 3
-    target_6m = monthly_expenses * 6
-    
+    target_amount = monthly_expenses * target_months
+    progress_percent = (current_savings / target_amount) * 100 if target_amount else 0
+
     return {
-        "current_fund": current_fund,
-        "months_of_expenses_covered": round(current_fund / monthly_expenses, 1),
-        "target_3_months": target_3m,
-        "target_6_months": target_6m,
-        "progress_to_3m_percent": round((current_fund / target_3m) * 100, 1),
-        "progress_to_6m_percent": round((current_fund / target_6m) * 100, 1),
-        "still_needed_for_3m": max(0, target_3m - current_fund),
-        "still_needed_for_6m": max(0, target_6m - current_fund),
-        "at_3_month_minimum": current_fund >= target_3m,
-        "at_6_month_recommended": current_fund >= target_6m,
+        "current_savings": current_savings,
+        "target_amount": target_amount,
+        "progress_percent": progress_percent,
+        "fully_funded": current_savings >= target_amount,
     }

@@ -1,0 +1,25 @@
+    ,
+    "math142": {
+        "title": "Calculus II",
+        "topics": ["Integration Techniques", "Applications of Integration", "Sequences and Series", "Taylor Series"],
+        "lessons": [
+            {"id": "lesson_1", "topic": "Integration", "title": "Integration Methods", "content": "Master integration by substitution, parts, and partial fractions.", "duration_minutes": 35, "difficulty": "high"},
+            {"id": "lesson_2", "topic": "Applications", "title": "Volume and Arc Length", "content": "Calculate volumes of revolution and arc lengths using integration.", "duration_minutes": 30, "difficulty": "high"},
+            {"id": "lesson_3", "topic": "Series", "title": "Infinite Series", "content": "Understand convergence tests and power series.", "duration_minutes": 40, "difficulty": "very_high"}
+        ],
+        "quizzes": [
+            {
+                "id": "quiz_1",
+                "topic": "Integration",
+                "title": "Integration Techniques",
+                "questions": [
+                    {"id": "q1", "question": "What is the integral of 1/x?", "options": ["x²/2", "ln|x| + C", "1/x² + C", "e^x + C"], "correct_answer": "ln|x| + C", "explanation": "The antiderivative of 1/x is the natural logarithm ln|x| plus a constant."},
+                    {"id": "q2", "question": "Which technique works best for ∫x·e^x dx?", "options": ["Substitution", "Integration by parts", "Partial fractions", "Direct integration"], "correct_answer": "Integration by parts", "explanation": "Integration by parts is ideal when you have a product of functions like x and e^x."},
+                    {"id": "q3", "question": "What does a definite integral represent?", "options": ["The derivative", "The area under a curve", "The slope", "The limit"], "correct_answer": "The area under a curve", "explanation": "A definite integral calculates the signed area between the curve and the x-axis."}
+                ],
+                "passing_score": 70,
+                "difficulty": "high"
+            }
+        ],
+        "learning_outcomes": ["Master integration techniques", "Apply integrals to real-world problems", "Analyze series convergence", "Work with Taylor series"]
+    }

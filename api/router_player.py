@@ -29,6 +29,7 @@ class StartPlayerRequest(BaseModel):
     age: Optional[int] = Field(None, description="Player's age (optional, default: 18)")
     hs_gpa: float = Field(3.0, ge=0.0, le=4.0, description="High school GPA (0-4.0)")
     parent_income: float = Field(60000.0, ge=0.0, description="Parent income (non-negative)")
+    starting_balance: float = Field(5000.0, ge=500.0, description="Starting wallet balance (minimum $500)")
 
     # starting choices
     housing_option_id: str = Field("dorm", description="ID of housing option (must exist in catalogs)")
@@ -37,8 +38,8 @@ class StartPlayerRequest(BaseModel):
     @field_validator('age')
     @classmethod
     def validate_age(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and (v < 5 or v > 120):
-            raise ValueError('Age must be between 5 and 120')
+        if v is not None and (v < 5 or v > 25):
+            raise ValueError('Age must be between 5 and 25')
         return v
 
     @field_validator('hs_gpa')
@@ -99,7 +100,7 @@ def start_player(req: StartPlayerRequest):
     job = JOB_DEFS[req.job_id] if req.job_id else None
 
     finance = Finance(
-        balance=float(DEFAULT_START_BALANCE),
+        balance=float(req.starting_balance),
         monthly_expenses=float(housing.monthly_cost) + float(DEFAULT_BASE_MONTHLY_NONHOUSING_EXPENSES),
         tuition_per_semester=0.0,       # will be set during progression (based on college)
         scholarship_per_semester=0.0,   # can be set later

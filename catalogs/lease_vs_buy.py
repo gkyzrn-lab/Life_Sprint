@@ -434,7 +434,7 @@ class HousingBuyOption(BaseModel):
     annual_hoa: float = 0
     
     # Maintenance
-    annual_maintenance: float  # 1-2% of home value
+    annual_maintenance: float = 0  # 1-2% of home value
     
     # Utilities
     utilities: float = 0  # Annual

@@ -65,5 +65,9 @@ class Player(BaseModel):
 
     plan: Optional[SemesterPlan] = None
 
+    # Course completion tracking
+    completed_courses: List[str] = Field(default_factory=list)  # List of completed course IDs
+    semester_exam_taken: Dict[str, bool] = Field(default_factory=dict)  # semester -> bool
+
     history: List[HistoryEvent] = Field(default_factory=list)
     tutorial_state: TutorialState = Field(default_factory=TutorialState)

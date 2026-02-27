@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict
+from typing import List, Dict, Any
 from fastapi import HTTPException
 
 from core_domain.player.player_model import Player
@@ -75,3 +75,70 @@ def grade_exam(player: Player, semester: int, answers: List[ExamAnswer]) -> Exam
 
     score_percent = 0.0 if total == 0 else (correct / total) * 100.0
     return ExamResult(correct_count=correct, total_questions=total, score_percent=score_percent)
+
+
+def grade_exam_with_feedback(player: Player, semester: int, answers: List[ExamAnswer]) -> Dict[str, Any]:
+    """Grade exam and provide detailed feedback with correct answers if student fails.
+    
+    Returns a dict with:
+    - exam_result: ExamResult object with score information
+    - passed: boolean indicating if student passed (70% or higher)
+    - feedback: list of question feedback (only shows answers for failed questions)
+    - message: encouragement or congratulations message
+    """
+    major_id = player.major_id
+    pool = EXAM_POOLS.get(major_id, {}).get(semester)
+    if not pool:
+        raise HTTPException(status_code=404, detail="No exam pool found for this major/semester.")
+
+    q_map = {q.id: q for q in pool}
+
+    correct = 0
+    total = 0
+    feedback = []
+
+    for a in answers:
+        q = q_map.get(a.question_id)
+        if not q:
+            continue
+        
+        total += 1
+        chosen = next((c for c in q.choices if c.id == a.chosen_choice_id), None)
+        is_correct = chosen and chosen.correct
+        
+        if is_correct:
+            correct += 1
+        
+        # Find the correct answer for feedback
+        correct_choice = next((c for c in q.choices if c.correct), None)
+        
+        feedback_item = {
+            "question_id": q.id,
+            "question_text": q.text,
+            "student_answer": chosen.text if chosen else "No answer",
+            "is_correct": is_correct,
+            "correct_answer": correct_choice.text if correct_choice else "Unknown",
+            "correct_answer_id": correct_choice.id if correct_choice else None
+        }
+        feedback.append(feedback_item)
+
+    score_percent = 0.0 if total == 0 else (correct / total) * 100.0
+    passed = score_percent >= 70.0
+    
+    # Only include detailed feedback if student failed
+    feedback_to_return = feedback if not passed else []
+    
+    exam_result = ExamResult(correct_count=correct, total_questions=total, score_percent=score_percent)
+    
+    if passed:
+        message = f"Excellent work! You passed with {score_percent:.1f}%!"
+    else:
+        message = f"You scored {score_percent:.1f}%. Review the correct answers below and try again."
+    
+    return {
+        "exam_result": exam_result.model_dump(),
+        "passed": passed,
+        "message": message,
+        "feedback": feedback_to_return
+    }
+

@@ -205,43 +205,32 @@ BUDGET_CATEGORIES: Dict[str, BudgetCategory] = {
 }
 
 
-# Budgeting myths
-BUDGET_MYTHS: Dict[str, BudgetMythFact] = {
-    "myth_budget_restrictive": BudgetMythFact(
-        myth_id="myth_budget_restrictive",
-        myth="Budgets are too restrictive and take the fun out of life.",
-        fact="Budgets do the opposite! They give you permission to spend on wants within limits. Without a budget, you don't know if you can afford that $200 purchase.",
-        impact="major"
-    ),
-    
-    "myth_budget_for_poor": BudgetMythFact(
-        myth_id="myth_budget_for_poor",
-        myth="You only need a budget if you're broke.",
-        fact="Wrong. Millionaires budget religiously. Budgets are how you decide money allocation. No budget = no intentional spending = money disappears.",
-        impact="major"
-    ),
-    
-    "myth_needs_vs_wants": BudgetMythFact(
-        myth_id="myth_needs_vs_wants",
-        myth="Phone/internet are 'wants' so I can skip them.",
-        fact="In modern life, phone and internet are 'needs' for communication and often job requirements. Budgets should reflect YOUR life, not generic rules.",
-        impact="moderate"
-    ),
-    
-    "myth_zero_based": BudgetMythFact(
-        myth_id="myth_zero_based",
-        myth="You need to spend every dollar of your budget or it's wasted.",
-        fact="If your budget is $200 entertainment and you only spend $150, GREAT! You saved $50. Budgets are ceilings, not targets.",
-        impact="moderate"
-    ),
-    
-    "myth_budget_weekly": BudgetMythFact(
-        myth_id="myth_budget_weekly",
-        myth="You need to balance your budget perfectly every week.",
-        fact="Think monthly or quarterly. Some weeks you spend more, some less. As long as monthly average matches budget, you're fine.",
-        impact="minor"
-    ),
+# Budgeting myths (simple dicts)
+BUDGET_MYTHS: Dict[str, Dict[str, str]] = {
+    "myth_budget_restrictive": {
+        "myth": "Budgets are too restrictive and take the fun out of life.",
+        "fact": "Budgets give you permission to spend within limits.",
+    },
+    "myth_budget_for_poor": {
+        "myth": "You only need a budget if you're broke.",
+        "fact": "Budgets help everyone make intentional spending choices.",
+    },
+    "myth_needs_vs_wants": {
+        "myth": "Phone/internet are always 'wants'.",
+        "fact": "Modern life often requires them; budgets should fit reality.",
+    },
+    "myth_zero_based": {
+        "myth": "You must spend every dollar you budgeted.",
+        "fact": "Budgets are ceilings, not targets.",
+    },
+    "myth_budget_weekly": {
+        "myth": "You must balance weekly to be successful.",
+        "fact": "Monthly averages are what matter most.",
+    },
 }
+
+for _myth in BUDGET_MYTHS.values():
+    _myth.setdefault("impact", "moderate")
 
 
 # Budgeting tips

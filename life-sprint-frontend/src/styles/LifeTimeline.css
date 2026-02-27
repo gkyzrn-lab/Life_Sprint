@@ -1,0 +1,216 @@
+/* Life Timeline Component Styling */
+
+.life-timeline {
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    color: var(--text);
+    max-height: 600px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-soft);
+}
+
+.timeline-header {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--accent);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding: 16px;
+    padding-left: 24px;
+    border-left: 3px solid var(--border);
+    margin-left: 8px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: timelineFade 420ms ease forwards;
+}
+
+@keyframes timelineFade {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.timeline-item:hover {
+    background: var(--surface);
+    border-left-color: var(--accent);
+}
+
+.timeline-item.achievement {
+    border-left-color: #FFD700;
+}
+
+.timeline-item.career {
+    border-left-color: #4A9EFF;
+}
+
+.timeline-item.education {
+    border-left-color: #7ED321;
+}
+
+.timeline-item.relationship {
+    border-left-color: #FF6B6B;
+}
+
+.timeline-item.financial {
+    border-left-color: #50E3C2;
+}
+
+.timeline-item.health {
+    border-left-color: #A8E6CF;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -10px;
+    top: 16px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bg-1);
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover .timeline-marker {
+    width: 24px;
+    height: 24px;
+    left: -12px;
+    top: 14px;
+    border-color: #50E3C2;
+}
+
+.timeline-item.achievement .timeline-marker {
+    border-color: #FFD700;
+    background: #FFD70020;
+}
+
+.timeline-item.career .timeline-marker {
+    border-color: #4A9EFF;
+    background: #4A9EFF20;
+}
+
+.timeline-item.education .timeline-marker {
+    border-color: #7ED321;
+    background: #7ED32120;
+}
+
+.timeline-item.relationship .timeline-marker {
+    border-color: #FF6B6B;
+    background: #FF6B6B20;
+}
+
+.timeline-item.financial .timeline-marker {
+    border-color: #50E3C2;
+    background: #50E3C220;
+}
+
+.timeline-item.health .timeline-marker {
+    border-color: #A8E6CF;
+    background: #A8E6CF20;
+}
+
+.event-age {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.event-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.event-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.event-type.achievement {
+    background: #FFD70030;
+    color: #FFD700;
+}
+
+.event-type.career {
+    background: #4A9EFF30;
+    color: #4A9EFF;
+}
+
+.event-type.education {
+    background: #7ED32130;
+    color: #7ED321;
+}
+
+.event-type.relationship {
+    background: #FF6B6B30;
+    color: #FF6B6B;
+}
+
+.event-type.financial {
+    background: #50E3C230;
+    color: #50E3C2;
+}
+
+.event-type.health {
+    background: #A8E6CF30;
+    color: #A8E6CF;
+}
+
+.event-description {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+.timeline-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* Scrollbar styling */
+.life-timeline::-webkit-scrollbar {
+    width: 8px;
+}
+
+.life-timeline::-webkit-scrollbar-track {
+    background: var(--surface);
+    border-radius: 4px;
+}
+
+.life-timeline::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.life-timeline::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}

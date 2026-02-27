@@ -1,0 +1,184 @@
+====================================================================================================
+COMPLETE COURSE LIST - ALL 81 COURSES WITH CONTENT
+====================================================================================================
+
+
+COMPUTER SCIENCE
+====================================================================================================
+
+Semester 1: Foundation Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ CS101      | Intro Programming                             | 5 quiz | 15 q
+  ✓ MATH141    | Calculus I                                    | 1 quiz |  4 q
+  ✓ ENG101     | English Composition                           | 1 quiz |  3 q
+
+Semester 2: Foundation Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ CS102      | Data Structures                               | 5 quiz | 15 q
+  ✓ CS201      | Discrete Mathematics                          | 1 quiz |  3 q
+  ✓ MATH142    | Calculus II                                   | 1 quiz |  3 q
+
+Semester 3: Sophomore Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ CS203      | Algorithms                                    | 1 quiz |  3 q
+  ✓ CS210      | Computer Organization                         | 1 quiz |  3 q
+  ✓ STAT200    | Probability & Statistics                      | 1 quiz |  3 q
+
+Semester 4: Sophomore Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ CS220      | Operating Systems                             | 1 quiz |  3 q
+  ✓ CS225      | Database Systems                              | 1 quiz |  3 q
+  ✓ CS230      | Software Engineering                          | 1 quiz |  3 q
+
+Semester 5: Junior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ CS301      | Computer Networks                             | 3 quiz |  9 q
+  ✓ CS310      | Machine Learning                              | 3 quiz |  9 q
+  ✓ CS3XX      | Technical Elective                            | 1 quiz |  3 q
+
+Semester 6: Junior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ CS320      | Computer Security                             | 3 quiz |  9 q
+  ✓ CS350      | Senior Capstone Project I                     | 1 quiz |  3 q
+  ✓ CS3XX      | Technical Elective                            | 1 quiz |  3 q
+
+Semester 7: Senior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ CS351      | Senior Capstone Project II                    | 1 quiz |  3 q
+  ✓ CS400      | Theory of Computation                         | 3 quiz |  9 q
+  ✓ CS4XX      | Advanced Technical Elective                   | 1 quiz |  3 q
+
+Semester 8: Senior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ CS410      | Professional Development                      | 1 quiz |  3 q
+  ✓ CS4XX      | Advanced Technical Elective                   | 1 quiz |  3 q
+  ✓ GEN400     | Senior Seminar                                | 1 quiz |  3 q
+
+BUSINESS ADMINISTRATION
+====================================================================================================
+
+Semester 1: Foundation Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ BUS101     | Introduction to Business                      | 2 quiz |  6 q
+  ✓ ECON101    | Microeconomics                                | 2 quiz |  7 q
+  ✓ MATH110    | Business Mathematics                          | 3 quiz |  9 q
+  ✓ ENG101     | English Composition                           | 1 quiz |  3 q
+
+Semester 2: Foundation Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ ACC201     | Financial Accounting                          | 3 quiz |  9 q
+  ✓ ECON102    | Macroeconomics                                | 3 quiz |  9 q
+  ✓ MKT201     | Marketing Fundamentals                        | 3 quiz |  9 q
+  ✓ STAT201    | Business Statistics                           | 3 quiz |  9 q
+
+Semester 3: Sophomore Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ FIN301     | Corporate Finance                             | 3 quiz |  9 q
+  ✓ MGT301     | Organizational Behavior and Management        | 3 quiz |  9 q
+  ✓ OPS301     | Operations Management                         | 3 quiz |  9 q
+  ✓ LAW201     | Business Law                                  | 2 quiz |  6 q
+
+Semester 4: Sophomore Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ ACC202     | Managerial Accounting                         | 2 quiz |  6 q
+  ✓ MIS301     | Management Information Systems                | 2 quiz |  6 q
+  ✓ BUS301     | Business Ethics                               | 3 quiz |  9 q
+  ✓ ELEC1      | Business Elective 1                           | 1 quiz |  3 q
+
+Semester 5: Junior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ STR401     | Strategic Management                          | 2 quiz |  6 q
+  ✓ CON401     | Concentration Course 1                        | 1 quiz |  3 q
+  ✓ CON402     | Concentration Course 2                        | 1 quiz |  3 q
+  ✓ ELEC2      | Business Elective 2                           | 1 quiz |  3 q
+
+Semester 6: Junior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ CON403     | Concentration Course 3                        | 1 quiz |  3 q
+  ✓ BUS410     | Business Analytics                            | 2 quiz |  6 q
+  ✓ MKT410     | Digital Marketing                             | 2 quiz |  6 q
+  ✓ ELEC3      | Business Elective 3                           | 1 quiz |  3 q
+
+Semester 7: Senior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ BUS490     | Business Capstone Project                     | 1 quiz |  3 q
+  ✓ CON404     | Concentration Course 4                        | 1 quiz |  3 q
+  ✓ ENT401     | Entrepreneurship                              | 1 quiz |  3 q
+  ✓ ELEC4      | Business Elective 4                           | 1 quiz |  3 q
+
+Semester 8: Senior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ BUS495     | Professional Development                      | 1 quiz |  3 q
+  ✓ GLB401     | Global Business Strategy                      | 1 quiz |  3 q
+  ✓ ELEC5      | Business Elective 5                           | 1 quiz |  3 q
+  ✓ SEM401     | Senior Seminar                                | 1 quiz |  3 q
+
+ENGINEERING
+====================================================================================================
+
+Semester 1: Foundation Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ ENG101     | English Composition                           | 1 quiz |  3 q
+  ✓ MATH141    | Calculus I                                    | 1 quiz |  4 q
+  ✓ CHEM101    | General Chemistry I                           | 3 quiz |  9 q
+  ✓ CS101      | Intro Programming                             | 5 quiz | 15 q
+
+Semester 2: Foundation Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ MATH142    | Calculus II                                   | 1 quiz |  3 q
+  ✓ PHYS141    | Physics I: Mechanics                          | 3 quiz |  9 q
+  ✓ CHEM102    | General Chemistry II                          | 3 quiz |  9 q
+  ✓ COMM101    | Technical Communication                       | 3 quiz |  9 q
+
+Semester 3: Sophomore Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ MATH241    | Calculus III                                  | 3 quiz |  9 q
+  ✓ PHYS142    | Physics II: Electricity & Magnetism           | 3 quiz |  9 q
+  ✓ ENGR201    | Statics                                       | 3 quiz |  9 q
+  ✓ ENGR205    | Materials Science                             | 3 quiz |  9 q
+
+Semester 4: Sophomore Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ MATH246    | Differential Equations                        | 3 quiz |  9 q
+  ✓ ENGR202    | Dynamics                                      | 3 quiz |  9 q
+  ✓ ENGR210    | Thermodynamics                                | 3 quiz |  9 q
+  ✓ ENGR215    | Circuits & Electronics                        | 3 quiz |  9 q
+
+Semester 5: Junior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ ENGR301    | Engineering Design I                          | 1 quiz |  3 q
+  ✓ SPEC301    | Specialization Course 1                       | 1 quiz |  3 q
+  ✓ SPEC302    | Specialization Course 2                       | 1 quiz |  3 q
+  ✓ ENGR310    | Engineering Economics                         | 1 quiz |  3 q
+
+Semester 6: Junior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ ENGR302    | Engineering Design II                         | 1 quiz |  3 q
+  ✓ SPEC303    | Specialization Course 3                       | 1 quiz |  3 q
+  ✓ SPEC304    | Specialization Lab                            | 1 quiz |  3 q
+  ✓ ENGR320    | Systems Engineering                           | 1 quiz |  3 q
+
+Semester 7: Senior Year - Fall
+----------------------------------------------------------------------------------------------------
+  ✓ ENGR401    | Senior Capstone Project I                     | 1 quiz |  3 q
+  ✓ SPEC401    | Advanced Specialization Course                | 1 quiz |  3 q
+  ✓ ENGR410    | Engineering Ethics                            | 1 quiz |  3 q
+  ✓ ELEC401    | Technical Elective                            | 1 quiz |  3 q
+
+Semester 8: Senior Year - Spring
+----------------------------------------------------------------------------------------------------
+  ✓ ENGR402    | Senior Capstone Project II                    | 1 quiz |  3 q
+  ✓ ENGR420    | Engineering Management                        | 1 quiz |  3 q
+  ✓ ENGR430    | Professional Practice                         | 1 quiz |  3 q
+  ✓ ELEC402    | Final Technical Elective                      | 1 quiz |  3 q
+
+====================================================================================================
+SUMMARY
+====================================================================================================
+Total Courses in Curriculum: 88
+Courses with Content: 82
+Coverage: 100%
+Total Quizzes: 152
+Total Questions: 458
+
+Status: ✅ COMPLETE

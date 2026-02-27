@@ -1,0 +1,371 @@
+================================================================================
+COMPLETE COURSE LISTING - LIFE SPRINT CURRICULUM
+================================================================================
+
+
+================================================================================
+NYC_PRIVATE
+================================================================================
+
+BA MAJOR - 22 Total Courses
+--------------------------------------------------------------------------------
+
+  SEMESTER 1: Business Foundation (Private)
+  ----------------------------------------------------------------------------
+    baP101               Intro Business (Private)       (3 cr, 3/10)
+                         Weekly Hours: 7 | Skills: Business Fundamentals, Networking
+    baP102               Accounting Principles          (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Accounting, Finance
+    econP101             Microeconomics                 (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Economics
+
+  SEMESTER 2: Economics & Finance
+  ----------------------------------------------------------------------------
+    baP201               Business Communication         (3 cr, 3/10)
+                         Weekly Hours: 6 | Skills: Presentation, Writing
+    econP102             Macroeconomics                 (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Economics, Policy
+    baP202               Financial Accounting           (3 cr, 4/10)
+                         Weekly Hours: 8 | Skills: Accounting
+
+  SEMESTER 3: Management & Marketing
+  ----------------------------------------------------------------------------
+    baP301               Management Principles          (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Leadership
+    baP302               Marketing Fundamentals         (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Marketing
+    baP303               Organizational Behavior        (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Psychology, Teams
+
+  SEMESTER 4: Finance & Strategy
+  ----------------------------------------------------------------------------
+    baP401               Corporate Finance              (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Finance, Valuation
+    baP402               Strategic Management           (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Strategy
+    baP403               Operations Management          (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Operations
+
+  SEMESTER 5: Specialized Topics
+  ----------------------------------------------------------------------------
+    baP501               Entrepreneurship               (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Innovation, Startup
+    baP502               Business Analytics             (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Analytics
+    baP503               International Business         (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Global
+
+  SEMESTER 6: Advanced Specialization
+  ----------------------------------------------------------------------------
+    baP601               Digital Marketing              (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Social Media
+    baP602               Investment Analysis            (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Investing
+    baP603               Business Ethics                (3 cr, 3/10)
+                         Weekly Hours: 6 | Skills: Ethics
+
+  SEMESTER 7: Capstone Preparation
+  ----------------------------------------------------------------------------
+    baP701               Business Policy                (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Policy
+    baP702               Consulting Project             (3 cr, 5/10)
+                         Weekly Hours: 9 | Skills: Consulting
+
+  SEMESTER 8: Capstone & Career
+  ----------------------------------------------------------------------------
+    baP801               Capstone Case Study            (3 cr, 5/10)
+                         Weekly Hours: 9 | Skills: Integration
+    baP802               Career Readiness               (1 cr, 2/10)
+                         Weekly Hours: 2 | Skills: Networking, Job Search
+
+CS MAJOR - 23 Total Courses
+--------------------------------------------------------------------------------
+
+  SEMESTER 1: Foundation & Programming Basics (Private)
+  ----------------------------------------------------------------------------
+    csP101               Intro Programming (Private)    (4 cr, 4/10)
+                         Weekly Hours: 11 | Skills: Python, Problem Solving, Mentoring
+    csP102               Computer Science Fundamentals  (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Logic, Binary
+    mathP101             Calculus I (Honors)            (4 cr, 6/10)
+                         Weekly Hours: 9 | Skills: Calculus, Proofs
+
+  SEMESTER 2: Data Structures & Algorithms (Private)
+  ----------------------------------------------------------------------------
+    csP201               Data Structures                (4 cr, 6/10)
+                         Weekly Hours: 11 | Skills: Algorithms, Data Structures
+    csP202               Discrete Mathematics           (3 cr, 7/10)
+                         Weekly Hours: 8 | Skills: Logic, Proofs, Advanced Math
+    mathP102             Calculus II (Honors)           (4 cr, 6/10)
+                         Weekly Hours: 9 | Skills: Calculus, Series
+
+  SEMESTER 3: OOP & Systems
+  ----------------------------------------------------------------------------
+    csP301               Object-Oriented Programming    (4 cr, 5/10)
+                         Weekly Hours: 11 | Skills: OOP, Design Patterns, Java
+    csP302               Computer Organization          (3 cr, 6/10)
+                         Weekly Hours: 8 | Skills: Architecture, Assembly
+    csP303               Database Design                (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: SQL, Database
+
+  SEMESTER 4: Algorithms & Advanced Topics
+  ----------------------------------------------------------------------------
+    csP401               Advanced Algorithms            (4 cr, 8/10)
+                         Weekly Hours: 11 | Skills: Complexity, Optimization
+    csP402               Software Engineering           (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Design Patterns, Agile
+    elecP1               Research Seminar               (3 cr, 6/10)
+                         Weekly Hours: 6 | Skills: Research
+
+  SEMESTER 5: Systems & Specialization
+  ----------------------------------------------------------------------------
+    csP501               Operating Systems              (4 cr, 7/10)
+                         Weekly Hours: 11 | Skills: Systems, Concurrency
+    csP502               Theory of Computation          (3 cr, 8/10)
+                         Weekly Hours: 8 | Skills: Formal Languages
+    elecP2               Distributed Systems            (3 cr, 7/10)
+                         Weekly Hours: 7 | Skills: Distributed Computing
+
+  SEMESTER 6: AI & Specialization
+  ----------------------------------------------------------------------------
+    csP601               Machine Learning               (3 cr, 8/10)
+                         Weekly Hours: 9 | Skills: ML, Deep Learning
+    csP602               Compiler Design                (3 cr, 8/10)
+                         Weekly Hours: 7 | Skills: Compilers, Language Design
+    elecP3               Research Project               (3 cr, 7/10)
+                         Weekly Hours: 8 | Skills: Research, Innovation
+
+  SEMESTER 7: Advanced Topics
+  ----------------------------------------------------------------------------
+    csP701               Cybersecurity                  (3 cr, 7/10)
+                         Weekly Hours: 8 | Skills: Security, Cryptography
+    csP702               Computer Networks              (3 cr, 7/10)
+                         Weekly Hours: 7 | Skills: Networking, Protocols
+    elecP4               Advanced Topics                (3 cr, 7/10)
+                         Weekly Hours: 6 | Skills: Specialization
+
+  SEMESTER 8: Capstone & Professional
+  ----------------------------------------------------------------------------
+    csP801               Capstone Project II            (4 cr, 8/10)
+                         Weekly Hours: 11 | Skills: Integration, Research
+    csP802               Professional Development       (1 cr, 2/10)
+                         Weekly Hours: 2 | Skills: Career
+
+================================================================================
+NYC_PUBLIC
+================================================================================
+
+BA MAJOR - 22 Total Courses
+--------------------------------------------------------------------------------
+
+  SEMESTER 1: Business Foundation
+  ----------------------------------------------------------------------------
+    ba101                Intro Business                 (3 cr, 3/10)
+                         Weekly Hours: 6 | Skills: Business Fundamentals
+    ba102                Accounting Principles          (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Accounting, Finance
+    econ101              Microeconomics                 (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Economics, Markets
+
+  SEMESTER 2: Economics & Financial Analysis
+  ----------------------------------------------------------------------------
+    ba201                Business Communication         (3 cr, 3/10)
+                         Weekly Hours: 5 | Skills: Writing, Presentation
+    econ102              Macroeconomics                 (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Economics, Policy
+    ba202                Financial Accounting           (3 cr, 4/10)
+                         Weekly Hours: 7 | Skills: Accounting, Financial Statements
+
+  SEMESTER 3: Management & Marketing
+  ----------------------------------------------------------------------------
+    ba301                Management Principles          (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Leadership, Organization
+    ba302                Marketing Fundamentals         (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Marketing, Consumer Behavior
+    ba303                Organizational Behavior        (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Psychology, Teams
+
+  SEMESTER 4: Finance & Strategy
+  ----------------------------------------------------------------------------
+    ba401                Corporate Finance              (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Finance, Valuation
+    ba402                Strategic Management           (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Strategy, Analysis
+    ba403                Operations Management          (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Operations, Supply Chain
+
+  SEMESTER 5: Specialized Business Topics
+  ----------------------------------------------------------------------------
+    ba501                Entrepreneurship               (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Innovation, Startup
+    ba502                Business Analytics             (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Data Analysis, Statistics
+    ba503                International Business         (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Global Markets, Trade
+
+  SEMESTER 6: Advanced Specialization
+  ----------------------------------------------------------------------------
+    ba601                Digital Marketing              (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Social Media, Analytics
+    ba602                Investment Analysis            (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Investing, Portfolio
+    ba603                Business Ethics                (3 cr, 3/10)
+                         Weekly Hours: 5 | Skills: Ethics, Leadership
+
+  SEMESTER 7: Capstone Preparation
+  ----------------------------------------------------------------------------
+    ba701                Business Policy                (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Policy, Decision Making
+    ba702                Consulting Project             (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Consulting, Problem Solving
+
+  SEMESTER 8: Capstone & Career Readiness
+  ----------------------------------------------------------------------------
+    ba801                Capstone Case Study            (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Integration, Analysis
+    ba802                Career Readiness               (1 cr, 2/10)
+                         Weekly Hours: 2 | Skills: Networking, Job Search
+
+CS MAJOR - 23 Total Courses
+--------------------------------------------------------------------------------
+
+  SEMESTER 1: Foundation & Programming Basics
+  ----------------------------------------------------------------------------
+    cs101                Intro Programming              (4 cr, 4/10)
+                         Weekly Hours: 10 | Skills: Python, Problem Solving
+    cs102                Computer Science Fundamentals  (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Logic, Binary
+    math101              Calculus I                     (4 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Calculus, Math
+
+  SEMESTER 2: Data Structures & Algorithms
+  ----------------------------------------------------------------------------
+    cs201                Data Structures                (4 cr, 5/10)
+                         Weekly Hours: 10 | Skills: Algorithms, Data Structures
+    cs202                Discrete Mathematics           (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Logic, Proofs
+    math102              Calculus II                    (4 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Calculus, Integration
+
+  SEMESTER 3: Object-Oriented Programming & Systems
+  ----------------------------------------------------------------------------
+    cs301                Object-Oriented Programming    (4 cr, 5/10)
+                         Weekly Hours: 10 | Skills: OOP, Java, Design
+    cs302                Computer Organization          (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Architecture, CPU
+    cs303                Database Systems               (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: SQL, Database Design
+
+  SEMESTER 4: Algorithms & Analysis
+  ----------------------------------------------------------------------------
+    cs401                Advanced Algorithms            (4 cr, 7/10)
+                         Weekly Hours: 10 | Skills: Algorithms, Complexity
+    cs402                Software Engineering           (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Design Patterns, Testing
+    elec1                Technical Elective I           (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Specialization
+
+  SEMESTER 5: Upper-Level Specialization
+  ----------------------------------------------------------------------------
+    cs501                Operating Systems              (4 cr, 7/10)
+                         Weekly Hours: 10 | Skills: Systems, C, Concurrency
+    cs502                Theory of Computation          (3 cr, 7/10)
+                         Weekly Hours: 7 | Skills: Formal Languages, Automata
+    elec2                Technical Elective II          (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Specialization
+
+  SEMESTER 6: Advanced Topics & Systems
+  ----------------------------------------------------------------------------
+    cs601                Machine Learning               (3 cr, 7/10)
+                         Weekly Hours: 8 | Skills: ML, Python, Statistics
+    cs602                Compiler Design                (3 cr, 7/10)
+                         Weekly Hours: 6 | Skills: Compilers, Parsing
+    elec3                Technical Elective III         (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Specialization
+
+  SEMESTER 7: Capstone & Professional
+  ----------------------------------------------------------------------------
+    cs701                Cybersecurity Fundamentals     (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Security, Cryptography
+    cs702                Advanced Networking            (3 cr, 6/10)
+                         Weekly Hours: 6 | Skills: Networking, Protocols
+    elec4                Technical Elective IV          (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Specialization
+
+  SEMESTER 8: Capstone Project & Career Preparation
+  ----------------------------------------------------------------------------
+    cs801                Capstone Project I             (4 cr, 7/10)
+                         Weekly Hours: 10 | Skills: Project Management, Integration
+    cs802                Professional Development       (1 cr, 2/10)
+                         Weekly Hours: 2 | Skills: Resume, Interview
+
+ENG MAJOR - 22 Total Courses
+--------------------------------------------------------------------------------
+
+  SEMESTER 1: Engineering Foundation
+  ----------------------------------------------------------------------------
+    eng101               Engineering Design             (3 cr, 4/10)
+                         Weekly Hours: 8 | Skills: Design, CAD
+    phys101              Physics I                      (4 cr, 5/10)
+                         Weekly Hours: 9 | Skills: Mechanics, Physics
+    math101              Calculus I                     (4 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Calculus, Math
+
+  SEMESTER 2: Physics & Mathematics
+  ----------------------------------------------------------------------------
+    phys102              Physics II                     (4 cr, 5/10)
+                         Weekly Hours: 9 | Skills: Electricity, Waves
+    math102              Calculus II                    (4 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Integration, Calculus
+    eng102               Engineering Analysis           (3 cr, 4/10)
+                         Weekly Hours: 6 | Skills: Statics, Analysis
+
+  SEMESTER 3: Circuits & Materials
+  ----------------------------------------------------------------------------
+    eng301               Circuit Analysis               (4 cr, 5/10)
+                         Weekly Hours: 9 | Skills: Electronics, Circuits
+    eng302               Materials Science              (3 cr, 5/10)
+                         Weekly Hours: 7 | Skills: Materials, Properties
+    math201              Linear Algebra                 (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Linear Algebra, Matrices
+
+  SEMESTER 4: Systems & Thermodynamics
+  ----------------------------------------------------------------------------
+    eng401               Thermodynamics                 (4 cr, 6/10)
+                         Weekly Hours: 9 | Skills: Thermodynamics, Energy
+    eng402               Digital Systems                (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Digital Logic, HDL
+    eng403               Signal Processing              (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Signals, Filtering
+
+  SEMESTER 5: Control & Advanced Topics
+  ----------------------------------------------------------------------------
+    eng501               Control Systems                (4 cr, 6/10)
+                         Weekly Hours: 8 | Skills: Controls, Feedback
+    eng502               Power Systems                  (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Power, Grid
+    eng503               Mechanical Design              (3 cr, 5/10)
+                         Weekly Hours: 8 | Skills: Mechanical Design, CAD
+
+  SEMESTER 6: Specialization & Applications
+  ----------------------------------------------------------------------------
+    eng601               Advanced Controls              (3 cr, 7/10)
+                         Weekly Hours: 7 | Skills: Advanced Control, Optimization
+    eng602               Renewable Energy               (3 cr, 5/10)
+                         Weekly Hours: 6 | Skills: Solar, Wind
+    eng603               Engineering Management         (3 cr, 4/10)
+                         Weekly Hours: 5 | Skills: Project Management, Leadership
+
+  SEMESTER 7: Capstone Preparation
+  ----------------------------------------------------------------------------
+    eng701               Systems Integration            (3 cr, 6/10)
+                         Weekly Hours: 7 | Skills: Integration, Testing
+    eng702               Engineering Ethics             (2 cr, 2/10)
+                         Weekly Hours: 3 | Skills: Ethics, Professional
+
+  SEMESTER 8: Capstone Project & Professional
+  ----------------------------------------------------------------------------
+    eng801               Capstone Design Project        (4 cr, 7/10)
+                         Weekly Hours: 10 | Skills: Design, Integration
+    eng802               Professional Practice          (1 cr, 2/10)
+                         Weekly Hours: 2 | Skills: PE Prep, Career

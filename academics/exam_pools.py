@@ -936,5 +936,194 @@ EXAM_POOLS: Dict[str, Dict[int, List[ExamQuestion]]] = {
             ),
         ],
     },
+    # ===== ENGINEERING TRACK =====
+    "eng": {
+        1: [
+            ExamQuestion(
+                id="eng_s1_q1",
+                text="What is the primary focus of engineering design?",
+                choices=[
+                    ExamChoice(id="a", text="Creating practical solutions to problems", correct=True),
+                    ExamChoice(id="b", text="Decorating buildings", correct=False),
+                    ExamChoice(id="c", text="Writing code only", correct=False),
+                ],
+                tags=["design"],
+            ),
+            ExamQuestion(
+                id="eng_s1_q2",
+                text="Newton's first law states that an object at rest will remain at rest unless acted upon by:",
+                choices=[
+                    ExamChoice(id="a", text="A net force", correct=True),
+                    ExamChoice(id="b", text="Gravity", correct=False),
+                    ExamChoice(id="c", text="An external observer", correct=False),
+                ],
+                tags=["mechanics"],
+            ),
+            ExamQuestion(
+                id="eng_s1_q3",
+                text="What does CAD stand for?",
+                choices=[
+                    ExamChoice(id="a", text="Computer-Aided Design", correct=True),
+                    ExamChoice(id="b", text="Computer Automatic Drafting", correct=False),
+                    ExamChoice(id="c", text="Computed Advanced Design", correct=False),
+                ],
+                tags=["design"],
+            ),
+        ],
+        2: [
+            ExamQuestion(
+                id="eng_s2_q1",
+                text="Electromagnetic force is strongest when:",
+                choices=[
+                    ExamChoice(id="a", text="Opposite charges are closest", correct=True),
+                    ExamChoice(id="b", text="Similar charges are far apart", correct=False),
+                    ExamChoice(id="c", text="No magnetic field exists", correct=False),
+                ],
+                tags=["electricity"],
+            ),
+            ExamQuestion(
+                id="eng_s2_q2",
+                text="An integral in calculus represents:",
+                choices=[
+                    ExamChoice(id="a", text="The area under a curve", correct=True),
+                    ExamChoice(id="b", text="The slope of a line", correct=False),
+                    ExamChoice(id="c", text="The distance traveled", correct=False),
+                ],
+                tags=["calculus"],
+            ),
+        ],
+        3: [
+            ExamQuestion(
+                id="eng_s3_q1",
+                text="Ohm's Law states V = I × R. What does R represent?",
+                choices=[
+                    ExamChoice(id="a", text="Resistance", correct=True),
+                    ExamChoice(id="b", text="Reactance", correct=False),
+                    ExamChoice(id="c", text="Resonance", correct=False),
+                ],
+                tags=["circuits"],
+            ),
+            ExamQuestion(
+                id="eng_s3_q2",
+                text="Tensile strength measures a material's ability to:",
+                choices=[
+                    ExamChoice(id="a", text="Resist breaking under tension", correct=True),
+                    ExamChoice(id="b", text="Resist heat", correct=False),
+                    ExamChoice(id="c", text="Conduct electricity", correct=False),
+                ],
+                tags=["materials"],
+            ),
+        ],
+        4: [
+            ExamQuestion(
+                id="eng_s4_q1",
+                text="The first law of thermodynamics deals with:",
+                choices=[
+                    ExamChoice(id="a", text="Conservation of energy", correct=True),
+                    ExamChoice(id="b", text="Entropy always increases", correct=False),
+                    ExamChoice(id="c", text="Heat flows from cold to hot", correct=False),
+                ],
+                tags=["thermodynamics"],
+            ),
+            ExamQuestion(
+                id="eng_s4_q2",
+                text="Boolean algebra uses which basic operations?",
+                choices=[
+                    ExamChoice(id="a", text="AND, OR, NOT", correct=True),
+                    ExamChoice(id="b", text="Plus, minus, multiply", correct=False),
+                    ExamChoice(id="c", text="Sine, cosine, tangent", correct=False),
+                ],
+                tags=["digital"],
+            ),
+        ],
+        5: [
+            ExamQuestion(
+                id="eng_s5_q1",
+                text="A control system's feedback loop is used to:",
+                choices=[
+                    ExamChoice(id="a", text="Maintain desired output by adjusting input", correct=True),
+                    ExamChoice(id="b", text="Increase system complexity", correct=False),
+                    ExamChoice(id="c", text="Reduce power consumption", correct=False),
+                ],
+                tags=["control"],
+            ),
+            ExamQuestion(
+                id="eng_s5_q2",
+                text="AC power transmission uses high voltage because:",
+                choices=[
+                    ExamChoice(id="a", text="To reduce resistive losses in wires", correct=True),
+                    ExamChoice(id="b", text="To make electricity stronger", correct=False),
+                    ExamChoice(id="c", text="DC cannot be transmitted long distances", correct=False),
+                ],
+                tags=["power"],
+            ),
+        ],
+        6: [
+            ExamQuestion(
+                id="eng_s6_q1",
+                text="What is the main advantage of solar photovoltaic systems?",
+                choices=[
+                    ExamChoice(id="a", text="Renewable and produce no emissions", correct=True),
+                    ExamChoice(id="b", text="They work during night", correct=False),
+                    ExamChoice(id="c", text="They require no maintenance", correct=False),
+                ],
+                tags=["renewable"],
+            ),
+            ExamQuestion(
+                id="eng_s6_q2",
+                text="Gantt charts are primarily used in project management for:",
+                choices=[
+                    ExamChoice(id="a", text="Scheduling and tracking tasks over time", correct=True),
+                    ExamChoice(id="b", text="Calculating project costs", correct=False),
+                    ExamChoice(id="c", text="Defining project scope", correct=False),
+                ],
+                tags=["management"],
+            ),
+        ],
+        7: [
+            ExamQuestion(
+                id="eng_s7_q1",
+                text="System integration testing ensures that:",
+                choices=[
+                    ExamChoice(id="a", text="All components work together correctly", correct=True),
+                    ExamChoice(id="b", text="Individual functions are optimized", correct=False),
+                    ExamChoice(id="c", text="The system costs less", correct=False),
+                ],
+                tags=["testing"],
+            ),
+            ExamQuestion(
+                id="eng_s7_q2",
+                text="Professional engineering ethics require engineers to:",
+                choices=[
+                    ExamChoice(id="a", text="Prioritize public safety and welfare", correct=True),
+                    ExamChoice(id="b", text="Always maximize profit", correct=False),
+                    ExamChoice(id="c", text="Avoid responsibility for failures", correct=False),
+                ],
+                tags=["ethics"],
+            ),
+        ],
+        8: [
+            ExamQuestion(
+                id="eng_s8_q1",
+                text="A capstone project integrates:",
+                choices=[
+                    ExamChoice(id="a", text="All major engineering disciplines and skills", correct=True),
+                    ExamChoice(id="b", text="Only the latest technology", correct=False),
+                    ExamChoice(id="c", text="Exclusively theoretical knowledge", correct=False),
+                ],
+                tags=["capstone"],
+            ),
+            ExamQuestion(
+                id="eng_s8_q2",
+                text="Preparing for the PE exam primarily requires:",
+                choices=[
+                    ExamChoice(id="a", text="Deep technical knowledge and professional experience", correct=True),
+                    ExamChoice(id="b", text="Just computer skills", correct=False),
+                    ExamChoice(id="c", text="Only passing all college exams", correct=False),
+                ],
+                tags=["professional"],
+            ),
+        ],
+    },
 
 }

@@ -141,7 +141,7 @@ INSURANCE_TYPES: Dict[str, InsuranceType] = {
         type_name="Renters Insurance",
         category="property",
         description="Covers your belongings in an apartment/rental home",
-        why_needed="Apartment fire, theft, or water damage can destroy everything you own ($5,000-$15,000+). Landlord's insurance only covers the building, not your stuff.",
+        why_needed="Apartment fire, theft, or water damage can destroy your belongings ($5,000-$15,000+). Landlord's insurance only covers the building, not your stuff.",
         what_it_covers=[
             "Your furniture and belongings",
             "Laptop, clothes, phone",
@@ -201,7 +201,7 @@ INSURANCE_TYPES: Dict[str, InsuranceType] = {
         description="Replaces 60-70% of income if you can't work (typically 3-6 months)",
         why_needed="If you get injured or sick, you stop earning money. One accident can cause 6+ months without income. Disability protects against this.",
         what_it_covers=[
-            "60-70% of salary while out of work",
+            "60-70% of income while out of work",
             "Usually covers 3-6 months",
             "Starts after 7-14 day waiting period",
         ],
@@ -364,7 +364,7 @@ INSURANCE_MYTHS: Dict[str, InsuranceMythFact] = {
     "myth_young_no_insurance": InsuranceMythFact(
         myth_id="myth_young_no_insurance",
         myth="I'm young and healthy, I don't need health insurance.",
-        fact="One emergency room visit costs $3,000-10,000. One accident injury costs $30,000+. Medical debt is the #1 cause of bankruptcy. You need insurance.",
+        fact="FALSE. One emergency room visit costs $3,000-10,000. One accident injury costs $30,000+. Medical debt is the #1 cause of bankruptcy. You need insurance.",
         financial_impact=50000
     ),
     
@@ -440,14 +440,16 @@ def get_insurance_by_category(category: str) -> List[InsuranceType]:
     return [i for i in INSURANCE_TYPES.values() if i.category == category]
 
 
-def get_scenario(scenario_id: str) -> Optional[InsuranceScenario]:
+def get_scenario(scenario_id: str | InsuranceScenario) -> Optional[InsuranceScenario]:
     """Get insurance scenario."""
+    if isinstance(scenario_id, InsuranceScenario):
+        scenario_id = scenario_id.scenario_id
     return INSURANCE_SCENARIOS.get(scenario_id)
 
 
-def get_all_scenarios() -> List[InsuranceScenario]:
-    """Get all scenarios."""
-    return list(INSURANCE_SCENARIOS.values())
+def get_all_scenarios() -> List[str]:
+    """Get all scenario ids."""
+    return list(INSURANCE_SCENARIOS.keys())
 
 
 def get_term(term_id: str) -> Optional[InsuranceTermFact]:

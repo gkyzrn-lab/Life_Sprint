@@ -16,20 +16,52 @@ MAJORS = {
         "avg_gpa_required": 3.3,
         "job_outlook": "excellent",
         "typical_salaries": "$80K-$150K entry level",
+        "tuition_multiplier": 1.15,
     },
-    "engineering": {
-        "id": "engineering",
-        "name": "Engineering (General)",
+    "mechanical_engineering": {
+        "id": "mechanical_engineering",
+        "name": "Mechanical Engineering",
         "description": (
-            "Design, build, and optimize systems (mechanical, electrical, civil). "
-            "Rigorous math, physics, and hands-on labs. Real-world impact on infrastructure, "
-            "transportation, and energy. Career challenges: long licensing requirements (PE exam), "
-            "fieldwork can be geographically demanding, project deadlines are unforgiving."
+            "Design and analyze mechanical systems, engines, robotics, and manufacturing processes. "
+            "Heavy physics, thermodynamics, and CAD work. Versatile career paths in automotive, aerospace, energy. "
+            "Career challenges: licensing requirements (PE exam), competitive field, project deadlines are unforgiving, "
+            "some roles involve travel to manufacturing sites."
         ),
         "difficulty": "very_high",
         "avg_gpa_required": 3.4,
         "job_outlook": "strong",
-        "typical_salaries": "$65K-$110K entry level",
+        "typical_salaries": "$70K-$85K entry level",
+        "tuition_multiplier": 1.20,
+    },
+    "electrical_engineering": {
+        "id": "electrical_engineering",
+        "name": "Electrical Engineering",
+        "description": (
+            "Design circuits, power systems, electronics, and telecommunications. "
+            "Advanced math and physics with hands-on lab work. Critical for tech, energy, and hardware development. "
+            "Career challenges: rapid technology changes require constant learning, licensing requirements (PE exam), "
+            "highly technical problem-solving, safety-critical work (power systems)."
+        ),
+        "difficulty": "very_high",
+        "avg_gpa_required": 3.5,
+        "job_outlook": "excellent",
+        "typical_salaries": "$75K-$95K entry level",
+        "tuition_multiplier": 1.22,
+    },
+    "industrial_engineering": {
+        "id": "industrial_engineering",
+        "name": "Industrial Engineering",
+        "description": (
+            "Optimize complex processes, supply chains, and production systems. "
+            "Combines engineering, business, and data analytics. Focus on efficiency and cost reduction. "
+            "Career challenges: requires understanding both technical and business sides, "
+            "project management pressure, balancing cost vs. quality, persuading teams to adopt changes."
+        ),
+        "difficulty": "high",
+        "avg_gpa_required": 3.3,
+        "job_outlook": "strong",
+        "typical_salaries": "$68K-$80K entry level",
+        "tuition_multiplier": 1.12,
     },
     "biology": {
         "id": "biology",
@@ -44,6 +76,7 @@ MAJORS = {
         "avg_gpa_required": 3.4,
         "job_outlook": "moderate",
         "typical_salaries": "$40K-$70K entry level (Research/Lab Tech)",
+        "tuition_multiplier": 1.10,
     },
     "mathematics": {
         "id": "mathematics",
@@ -58,6 +91,7 @@ MAJORS = {
         "avg_gpa_required": 3.5,
         "job_outlook": "moderate",
         "typical_salaries": "$55K-$95K (with specialization)",
+        "tuition_multiplier": 1.0,
     },
 
     # Social Sciences
@@ -74,6 +108,7 @@ MAJORS = {
         "avg_gpa_required": 3.2,
         "job_outlook": "moderate",
         "typical_salaries": "$45K-$65K entry level (without license)",
+        "tuition_multiplier": 0.95,
     },
     "economics": {
         "id": "economics",
@@ -88,6 +123,7 @@ MAJORS = {
         "avg_gpa_required": 3.3,
         "job_outlook": "strong",
         "typical_salaries": "$60K-$100K entry level",
+        "tuition_multiplier": 1.05,
     },
     "politics": {
         "id": "politics",
@@ -102,6 +138,7 @@ MAJORS = {
         "avg_gpa_required": 3.1,
         "job_outlook": "moderate",
         "typical_salaries": "$45K-$75K entry level",
+        "tuition_multiplier": 0.90,
     },
     "history": {
         "id": "history",
@@ -116,6 +153,7 @@ MAJORS = {
         "avg_gpa_required": 3.0,
         "job_outlook": "limited",
         "typical_salaries": "$40K-$60K entry level",
+        "tuition_multiplier": 0.85,
     },
     "sociology": {
         "id": "sociology",
@@ -130,6 +168,7 @@ MAJORS = {
         "avg_gpa_required": 3.0,
         "job_outlook": "moderate",
         "typical_salaries": "$45K-$65K entry level",
+        "tuition_multiplier": 0.90,
     },
 
     # Business & Economics
@@ -146,6 +185,7 @@ MAJORS = {
         "avg_gpa_required": 3.0,
         "job_outlook": "strong",
         "typical_salaries": "$50K-$85K entry level",
+        "tuition_multiplier": 1.08,
     },
     "accounting": {
         "id": "accounting",
@@ -160,6 +200,7 @@ MAJORS = {
         "avg_gpa_required": 3.2,
         "job_outlook": "excellent",
         "typical_salaries": "$50K-$75K entry level (with CPA: $75K-$120K+)",
+        "tuition_multiplier": 1.10,
     },
     "finance": {
         "id": "finance",
@@ -174,6 +215,7 @@ MAJORS = {
         "avg_gpa_required": 3.3,
         "job_outlook": "strong",
         "typical_salaries": "$70K-$150K+ (varies widely by firm)",
+        "tuition_multiplier": 1.12,
     },
 
     # Humanities
@@ -190,6 +232,7 @@ MAJORS = {
         "avg_gpa_required": 3.1,
         "job_outlook": "limited",
         "typical_salaries": "$40K-$60K entry level",
+        "tuition_multiplier": 0.85,
     },
     "communications": {
         "id": "communications",
@@ -204,6 +247,7 @@ MAJORS = {
         "avg_gpa_required": 3.0,
         "job_outlook": "changing",
         "typical_salaries": "$40K-$65K entry level",
+        "tuition_multiplier": 0.92,
     },
 
     # Healthcare
@@ -220,6 +264,7 @@ MAJORS = {
         "avg_gpa_required": 3.2,
         "job_outlook": "excellent",
         "typical_salaries": "$55K-$75K entry level (increases with experience/specialization)",
+        "tuition_multiplier": 1.25,
     },
 
     # Interdisciplinary
@@ -236,5 +281,6 @@ MAJORS = {
         "avg_gpa_required": 3.4,
         "job_outlook": "excellent",
         "typical_salaries": "$75K-$130K entry level",
+        "tuition_multiplier": 1.18,
     },
 }

@@ -41,7 +41,15 @@ export interface Tooltip {
 }
 
 // Player Management
-export async function createPlayer(name: string, collegeId: string, majorId: string): Promise<Player> {
+export async function createPlayer(
+    name: string,
+    collegeId: string,
+    majorId: string,
+    hsGpa: number = 3.0,
+    startingBalance: number = 5000,
+    age: number = 18,
+    housingOptionId: string = 'dorm'
+): Promise<Player> {
     const response = await fetch(`${API_BASE}/player/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,11 +57,18 @@ export async function createPlayer(name: string, collegeId: string, majorId: str
             name,
             college_id: collegeId,
             major_id: majorId,
-            housing_option_id: 'dorm',
+            age,
+            hs_gpa: hsGpa,
+            parent_income: 60000,
+            starting_balance: startingBalance,
+            housing_option_id: housingOptionId,
             job_id: null,
         }),
     })
-    if (!response.ok) throw new Error(`Failed to create player: ${response.statusText}`)
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Failed to create player: ${response.statusText} - ${JSON.stringify(errorData)}`)
+    }
     return response.json()
 }
 
@@ -134,5 +149,35 @@ export async function disableTutorials(playerId: string): Promise<any> {
         method: 'POST',
     })
     if (!response.ok) throw new Error(`Failed to disable tutorials: ${response.statusText}`)
+    return response.json()
+}
+
+// Catalog Functions
+export async function getColleges(): Promise<any> {
+    const response = await fetch(`${API_BASE}/catalogs/colleges`)
+    if (!response.ok) throw new Error(`Failed to fetch colleges: ${response.statusText}`)
+    return response.json()
+}
+
+export async function getMajors(): Promise<any> {
+    const response = await fetch(`${API_BASE}/catalogs/majors`)
+    if (!response.ok) throw new Error(`Failed to fetch majors: ${response.statusText}`)
+    return response.json()
+}
+
+// Academic Functions
+export async function attendClass(courseId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/curriculum/attend-class`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ course_id: courseId }),
+    })
+    if (!response.ok) throw new Error(`Failed to attend class: ${response.statusText}`)
+    return response.json()
+}
+
+export async function getCourseContent(courseId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/curriculum/courses/${courseId}`)
+    if (!response.ok) throw new Error(`Failed to fetch course content: ${response.statusText}`)
     return response.json()
 }
