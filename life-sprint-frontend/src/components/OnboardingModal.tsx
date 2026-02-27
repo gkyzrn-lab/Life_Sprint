@@ -620,15 +620,6 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                                                         ))}
                                                     </ul>
                                                 </div>
-
-                                                <div className="card-section">
-                                                    <h4>Common Career Paths</h4>
-                                                    <div className="job-paths">
-                                                        {college.jobPaths.map((jp, i) => (
-                                                            <span key={i} className="job-tag">{jp}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
                                             </div>
                                         )
                                     })}
