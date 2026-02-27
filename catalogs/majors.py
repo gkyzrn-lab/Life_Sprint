@@ -15,7 +15,7 @@ MAJORS = {
         "difficulty": "high",
         "avg_gpa_required": 3.3,
         "job_outlook": "excellent",
-        "typical_salaries": "$80K-$150K entry level",
+        "typical_salaries": "$90K-$160K entry level",
         "tuition_multiplier": 1.15,
     },
     "mechanical_engineering": {
@@ -30,7 +30,7 @@ MAJORS = {
         "difficulty": "very_high",
         "avg_gpa_required": 3.4,
         "job_outlook": "strong",
-        "typical_salaries": "$70K-$85K entry level",
+        "typical_salaries": "$80K-$110K entry level",
         "tuition_multiplier": 1.20,
     },
     "electrical_engineering": {
@@ -45,7 +45,7 @@ MAJORS = {
         "difficulty": "very_high",
         "avg_gpa_required": 3.5,
         "job_outlook": "excellent",
-        "typical_salaries": "$75K-$95K entry level",
+        "typical_salaries": "$85K-$125K entry level",
         "tuition_multiplier": 1.22,
     },
     "industrial_engineering": {

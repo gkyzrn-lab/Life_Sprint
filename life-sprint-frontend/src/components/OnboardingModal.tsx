@@ -14,10 +14,10 @@ const COLLEGES = [
         name: 'CUNY Baruch College',
         baseNote: 'Public City College - Most Affordable',
         tuitionByMajor: {
-            'cs': 8450,
-            'business': 7340,
-            'engineering': 8850,
-            'liberal_arts': 7100
+            'cs': 8650,
+            'business': 7520,
+            'engineering': 9050,
+            'liberal_arts': 7280
         },
         benefits: [
             'Most affordable tuition',
@@ -40,10 +40,10 @@ const COLLEGES = [
         name: 'New York University',
         baseNote: 'Elite Private University',
         tuitionByMajor: {
-            'cs': 69503,
-            'business': 60438,
-            'engineering': 70500,
-            'liberal_arts': 58000
+            'cs': 71200,
+            'business': 62000,
+            'engineering': 72200,
+            'liberal_arts': 59500
         },
         benefits: [
             'Prestigious global reputation',
@@ -67,10 +67,10 @@ const COLLEGES = [
         name: 'Columbia University',
         baseNote: '🏆 Ivy League - Highest Prestige & Challenge',
         tuitionByMajor: {
-            'cs': 78600,
-            'business': 68400,
-            'engineering': 79500,
-            'liberal_arts': 66000
+            'cs': 80750,
+            'business': 70200,
+            'engineering': 81800,
+            'liberal_arts': 67800
         },
         benefits: [
             'Ivy League prestige opens doors everywhere',
@@ -100,9 +100,9 @@ const MAJORS = [
         description: 'Learn programming, data structures, algorithms, and software engineering. High earning potential but demanding coursework (advanced math, problem-solving). Leads to tech careers, startups, and innovation roles.',
         focus: 'Software development, algorithms, systems',
         difficulty: 'high',
-        typical_salaries: '$80K-$150K entry level',
+        typical_salaries: '$90K-$160K entry level',
         job_outlook: 'excellent',
-        costMultiplier: 1.25,
+        costMultiplier: 1.15,
         costNote: 'Higher costs - Lab & equipment fees',
         benefits: [
             'Highest starting salary potential',
@@ -116,7 +116,7 @@ const MAJORS = [
             'Requires constant upskilling',
             'Competitive job market'
         ],
-        jobPaths: ['Junior Developer', 'Software Engineer', 'Tech Lead', 'Engineering Manager'],
+        jobPaths: ['Software Engineer', 'Data Scientist', 'AI/ML Engineer', 'Full-Stack Developer', 'Engineering Lead'],
         skillsGained: ['Python', 'Algorithms', 'Databases', 'System design']
     },
     {
@@ -125,7 +125,7 @@ const MAJORS = [
         description: 'Master management, finance, marketing, and entrepreneurship. Versatile degree with good work-life balance. Strong networking is essential for success.',
         focus: 'Finance, management, entrepreneurship',
         difficulty: 'moderate',
-        typical_salaries: '$55K-$85K entry level',
+        typical_salaries: '$60K-$95K entry level',
         job_outlook: 'good',
         costMultiplier: 1.0,
         costNote: 'Base rate - Most affordable',
@@ -141,7 +141,7 @@ const MAJORS = [
             'Results depend on connections',
             'Less specialized skills'
         ],
-        jobPaths: ['Financial Analyst', 'Business Manager', 'Entrepreneur', 'Consultant'],
+        jobPaths: ['Financial Analyst', 'Management Consultant', 'Entrepreneur', 'Marketing Manager', 'Product Manager'],
         skillsGained: ['Finance', 'Leadership', 'Communications', 'Analytics']
     },
     {
@@ -150,9 +150,9 @@ const MAJORS = [
         description: 'Design and build systems, machines, and infrastructure. Combines physics, math, and hands-on lab work. Rigorous but rewarding with stable career paths.',
         focus: 'Hardware, mechanical, civil systems',
         difficulty: 'very_high',
-        typical_salaries: '$70K-$95K entry level',
+        typical_salaries: '$80K-$110K entry level',
         job_outlook: 'strong',
-        costMultiplier: 1.50,
+        costMultiplier: 1.20,
         costNote: 'Most expensive - Advanced labs & equipment',
         benefits: [
             'Strong salary growth',
@@ -166,7 +166,7 @@ const MAJORS = [
             'Project deadlines',
             'Licensing requirements (PE exam)'
         ],
-        jobPaths: ['Junior Engineer', 'Senior Engineer', 'Project Lead', 'Director'],
+        jobPaths: ['Mechanical Engineer', 'Civil Engineer', 'Systems Engineer', 'Project Lead', 'Technical Director'],
         skillsGained: ['MATLAB', 'CAD', 'Physics', 'Problem-solving']
     },
     {
@@ -175,7 +175,7 @@ const MAJORS = [
         description: 'Explore humanities, social sciences, and critical thinking. Develops well-rounded perspective and communication skills. Career path less defined but offers flexibility.',
         focus: 'Humanities, social sciences, philosophy',
         difficulty: 'moderate',
-        typical_salaries: '$45K-$65K entry level',
+        typical_salaries: '$50K-$75K entry level',
         job_outlook: 'moderate',
         costMultiplier: 0.95,
         costNote: 'Most affordable - Lower overhead costs',
@@ -191,7 +191,7 @@ const MAJORS = [
             'Job market flexibility needed',
             'May need grad school'
         ],
-        jobPaths: ['Teacher', 'Writer', 'Analyst', 'Consultant'],
+        jobPaths: ['Teacher', 'Content Writer', 'Policy Analyst', 'Nonprofit Manager', 'Graduate School'],
         skillsGained: ['Critical thinking', 'Writing', 'Analysis', 'Communication']
     }
 ]
@@ -661,6 +661,19 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                                                             ? major.description.substring(0, 150) + '...'
                                                             : major.description}
                                                     </p>
+                                                </div>
+                                            )}
+
+                                            {major.jobPaths && major.jobPaths.length > 0 && (
+                                                <div className="card-section">
+                                                    <h4>Career Paths</h4>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                        {major.jobPaths.map((path: string, i: number) => (
+                                                            <span key={i} style={{ backgroundColor: '#e3f2fd', padding: '4px 12px', borderRadius: '12px', fontSize: '11px', color: '#1976d2' }}>
+                                                                {path}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
