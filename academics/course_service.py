@@ -10,12 +10,15 @@ from fastapi import HTTPException
 from core_domain.player.player_model import Player
 from academics.curriculum import CURRICULUM
 from catalogs.course_content import COURSE_CONTENT
+from academics.course_games import get_course_games, get_game_by_id, calculate_game_score
+from catalogs.ba_course_topics import format_course_topics_for_display
 
 
 def get_course_info(course_id: str) -> Dict[str, Any]:
     """
     Get course information for displaying in a pop-up modal.
     Returns course title, description, skills, topics, and other metadata.
+    Includes mini-games for interactive learning.
     """
     # Search across all majors/semesters to find this course
     course_data = None
@@ -50,6 +53,26 @@ def get_course_info(course_id: str) -> Dict[str, Any]:
         course_data["description"] = content.get("brief_info", "")
         course_data["lessons_count"] = len(content.get("lessons", []))
         course_data["quizzes_count"] = len(content.get("quizzes", []))
+
+    # Add mini-games for the course
+    games = get_course_games(course_id)
+    course_data["mini_games"] = [
+        {
+            "id": game.id,
+            "title": game.title,
+            "description": game.description,
+            "topic": game.topic,
+            "game_type": game.game_type,
+            "estimated_duration_minutes": game.estimated_duration_minutes,
+            "question_count": len(game.questions),
+        }
+        for game in games
+    ]
+
+    # Add formatted course topics (BA courses have special formatting)
+    topics_display = format_course_topics_for_display(course_id)
+    if topics_display.get("found"):
+        course_data["formatted_topics"] = topics_display
 
     return course_data
 

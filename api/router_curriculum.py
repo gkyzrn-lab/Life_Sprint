@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Dict, Any, List
 from pydantic import BaseModel
 
 from academics.curriculum import CURRICULUM
 from api.deps import require_player
+from core_domain.player.player_model import Player
 from catalogs.curriculums import CURRICULUMS
 from catalogs.course_content import get_course_content, get_course_lessons, get_course_quizzes
 from catalogs.curriculum_achievements import (
@@ -797,4 +798,179 @@ async def attend_class(request: AttendClassRequest):
         "learning_outcomes": content.get("learning_outcomes", []),
         "resources": resources_data,
         "message": f"You are now attending {content.get('title', 'Unknown Course')}. Complete lessons and quizzes to master the material!"
+    }
+
+# ===== MINI-GAMES ENDPOINTS =====
+
+@router.get("/games/course/{course_id}")
+async def get_course_games(course_id: str):
+    """
+    Get all available mini-games for a specific course.
+    These interactive games help students learn course concepts.
+    """
+    from academics.course_games import get_course_games as fetch_games
+    
+    games = fetch_games(course_id)
+    
+    if not games:
+        return {
+            "course_id": course_id,
+            "games": [],
+            "message": f"No mini-games available yet for {course_id}. Check back soon!"
+        }
+    
+    return {
+        "course_id": course_id,
+        "games": [
+            {
+                "id": game.id,
+                "title": game.title,
+                "description": game.description,
+                "topic": game.topic,
+                "game_type": game.game_type,
+                "estimated_duration_minutes": game.estimated_duration_minutes,
+                "question_count": len(game.questions),
+                "points_per_correct": game.points_per_correct,
+                "min_passing_score": game.min_passing_score,
+            }
+            for game in games
+        ],
+        "total_games": len(games),
+        "message": f"🎮 {len(games)} interactive game(s) available to master this topic!"
+    }
+
+
+@router.get("/games/{game_id}")
+async def get_game_details(game_id: str):
+    """
+    Get full details of a specific mini-game including all questions.
+    """
+    from academics.course_games import get_game_by_id
+    
+    game = get_game_by_id(game_id)
+    
+    if not game:
+        raise HTTPException(status_code=404, detail=f"Game {game_id} not found")
+    
+    return {
+        "id": game.id,
+        "course_id": game.course_id,
+        "title": game.title,
+        "description": game.description,
+        "topic": game.topic,
+        "game_type": game.game_type,
+        "estimated_duration_minutes": game.estimated_duration_minutes,
+        "points_per_correct": game.points_per_correct,
+        "points_per_incorrect": game.points_per_incorrect,
+        "min_passing_score": game.min_passing_score,
+        "questions": [
+            {
+                "id": q.id,
+                "prompt": q.prompt,
+                "options": q.options,
+                "difficulty": q.difficulty,
+                # Note: correct_option_index NOT included here to prevent cheating
+            }
+            for q in game.questions
+        ],
+        "message": f"Ready to learn about {game.topic}? Complete this interactive game!"
+    }
+
+
+class GameSubmissionRequest(BaseModel):
+    """Request to submit game answers"""
+    game_id: str
+    course_id: str
+    answers: List[Dict[str, Any]]  # List of {question_id, selected_option_index}
+    time_spent_minutes: int
+
+
+@router.post("/games/submit")
+async def submit_game(request: GameSubmissionRequest, player: Player = Depends(require_player)):
+    """
+    Submit game answers and receive score, feedback, and learning points.
+    """
+    from academics.course_games import get_game_by_id, calculate_game_score
+    
+    game = get_game_by_id(request.game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail=f"Game {request.game_id} not found")
+    
+    if game.course_id != request.course_id:
+        raise HTTPException(status_code=400, detail="Game does not belong to this course")
+    
+    # Grade the game
+    correct_count = 0
+    feedback_details = []
+    key_learnings = []
+    
+    question_map = {q.id: q for q in game.questions}
+    
+    for answer in request.answers:
+        question_id = answer.get("question_id")
+        selected_index = answer.get("selected_option_index")
+        
+        if question_id not in question_map:
+            continue
+        
+        question = question_map[question_id]
+        is_correct = selected_index == question.correct_option_index
+        
+        if is_correct:
+            correct_count += 1
+            feedback_details.append({
+                "question_id": question_id,
+                "is_correct": True,
+                "learning_point": question.learning_point
+            })
+        else:
+            feedback_details.append({
+                "question_id": question_id,
+                "is_correct": False,
+                "correct_answer": question.options[question.correct_option_index],
+                "explanation": question.explanation,
+                "learning_point": question.learning_point
+            })
+        
+        key_learnings.append(question.learning_point)
+    
+    # Calculate score
+    score_data = calculate_game_score(correct_count, len(request.answers), game)
+    
+    # Award points to player based on performance
+    if not hasattr(player, 'game_points'):
+        player.game_points = 0
+    
+    player.game_points += score_data["points_earned"]
+    
+    # Track completed games
+    if not hasattr(player, 'completed_games'):
+        player.completed_games = []
+    
+    player.completed_games.append({
+        "game_id": request.game_id,
+        "course_id": request.course_id,
+        "score_percent": score_data["score_percent"],
+        "points_earned": score_data["points_earned"],
+        "passed": score_data["passed"],
+        "timestamp": "now"  # Replace with actual timestamp in future
+    })
+    
+    return {
+        "game_id": request.game_id,
+        "course_id": request.course_id,
+        "score_percent": score_data["score_percent"],
+        "points_earned": score_data["points_earned"],
+        "correct_answers": score_data["correct_answers"],
+        "total_questions": score_data["total_questions"],
+        "passed": score_data["passed"],
+        "time_spent_minutes": request.time_spent_minutes,
+        "feedback": feedback_details,
+        "key_learnings": list(set(key_learnings)),  # Unique learnings
+        "total_game_points": player.game_points,
+        "message": (
+            f"🎉 Great job! You scored {score_data['score_percent']:.1f}% and earned {score_data['points_earned']} points!"
+            if score_data["passed"]
+            else f"💡 You scored {score_data['score_percent']:.1f}%. Review the correct answers and try again!"
+        )
     }
