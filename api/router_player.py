@@ -19,6 +19,12 @@ from catalogs.jobs import JOB_DEFS
 
 router = APIRouter(prefix="/player", tags=["player"])
 
+# Backward compatibility for legacy college ids used by older clients/tests.
+LEGACY_COLLEGE_ID_MAP = {
+    "nyc_public": "cuny_baruch",
+    "nyc_private": "nyu",
+}
+
 
 class StartPlayerRequest(BaseModel):
     name: str = Field(min_length=1, description="Player's name (required, non-empty)")
@@ -63,8 +69,10 @@ def start_player(req: StartPlayerRequest):
     Create a new player and start the game.
     Validates all catalog references and returns clear error messages.
     """
+    normalized_college_id = LEGACY_COLLEGE_ID_MAP.get(req.college_id, req.college_id)
+
     # Validate college
-    if req.college_id not in COLLEGES:
+    if normalized_college_id not in COLLEGES:
         available = ', '.join(sorted(COLLEGES.keys()))
         raise HTTPException(
             status_code=422,
@@ -113,7 +121,7 @@ def start_player(req: StartPlayerRequest):
         hs_gpa=float(req.hs_gpa),
         parent_income=float(req.parent_income),
         major_id=req.major_id,
-        college_id=req.college_id,
+        college_id=normalized_college_id,
         semester=1,
         year_in_school=1,
         stats=Stats(),
