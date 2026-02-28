@@ -15,7 +15,7 @@ const COLLEGES = [
         baseNote: 'Public City College - Most Affordable',
         tuitionByMajor: {
             'cs': 8650,
-            'business': 7520,
+            'ba': 7520,
             'engineering': 9050,
             'liberal_arts': 7280
         },
@@ -41,7 +41,7 @@ const COLLEGES = [
         baseNote: 'Elite Private University',
         tuitionByMajor: {
             'cs': 71200,
-            'business': 62000,
+            'ba': 62000,
             'engineering': 72200,
             'liberal_arts': 59500
         },
@@ -68,7 +68,7 @@ const COLLEGES = [
         baseNote: '🏆 Ivy League - Highest Prestige & Challenge',
         tuitionByMajor: {
             'cs': 80750,
-            'business': 70200,
+            'ba': 70200,
             'engineering': 81800,
             'liberal_arts': 67800
         },
@@ -120,7 +120,7 @@ const MAJORS = [
         skillsGained: ['Python', 'Algorithms', 'Databases', 'System design']
     },
     {
-        id: 'business',
+        id: 'ba',
         name: 'Business Administration',
         description: 'Master management, finance, marketing, and entrepreneurship. Versatile degree with good work-life balance. Strong networking is essential for success.',
         focus: 'Finance, management, entrepreneurship',
@@ -380,27 +380,24 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                     id: college.id,
                     name: college.name,
                     baseNote: college.notes || college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution',
-                    tuitionByMajor: {
-                        'cs': college.base_tuition_per_year * 1.15,
-                        'business': college.base_tuition_per_year,
-                        'engineering': college.base_tuition_per_year * 1.20,
-                        'liberal_arts': college.base_tuition_per_year * 0.95
-                    },
+                    offeredMajors: college.offered_majors || [],  // List of major IDs this college offers
                     benefits: college.benefits || [],
                     cons: college.cons || [],
                     jobPaths: college.career_paths || [],
                     networkingMultiplier: college.networking_multiplier || 1.0,
                     jobOpportunityBonus: college.job_opportunity_bonus || 0,
-                    startingSalaryMultiplier: college.starting_salary_multiplier || 1.0
+                    startingSalaryMultiplier: college.starting_salary_multiplier || 1.0,
+                    baseTuition: college.base_tuition_per_year || 0
                 }))
 
                 setColleges(transformedColleges)
 
-                // Transform majors data to include jobPaths from career_paths field
+                // Store all majors (will be filtered by college selection)
                 const transformedMajors = Object.values(majorsData).map((major: any) => ({
                     ...major,
-                    jobPaths: major.career_paths || []
-                }))
+                    jobPaths: major.career_paths || [],
+                    tuitionMultiplier: major.tuition_multiplier || 1.0
+                })).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''))
 
                 setMajors(transformedMajors)
 
@@ -565,9 +562,32 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
     // Show college and major selection first
     if (showSelection) {
         const collegeList = colleges.length > 0 ? colleges : COLLEGES
-        const majorList = majors.length > 0 ? majors : MAJORS
         const selectedCollegeData = collegeList.find(c => c.id === selectedCollege)
+
+        // Filter majors based on selected college's offered_majors
+        const allMajors = majors.length > 0 ? majors : MAJORS
+        const majorList = allMajors
+            .filter(m => {
+                if (!selectedCollegeData || !selectedCollegeData.offeredMajors) {
+                    return true  // Show all if no filtering data
+                }
+                return selectedCollegeData.offeredMajors.includes(m.id)
+            })
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+
+        // Reset major selection if it's not offered by the selected college
+        if (majorList.length > 0 && !majorList.find(m => m.id === selectedMajor)) {
+            setSelectedMajor(majorList[0].id)
+        }
+
         const selectedMajorData = majorList.find(m => m.id === selectedMajor)
+
+        const calculateTuition = () => {
+            if (!selectedCollegeData || !selectedMajorData) return 8000
+            const baseTuition = selectedCollegeData.baseTuition || 8000
+            const multiplier = selectedMajorData.tuitionMultiplier || 1.0
+            return Math.round(baseTuition * multiplier)
+        }
 
         if (loadingCatalogs) {
             return (
@@ -683,9 +703,9 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                         <div className="selection-summary">
                             <h3>Your Selection & Cost</h3>
                             <p className="selection-text">{selectedCollegeData?.name} + {selectedMajorData?.name}</p>
-                            {selectedCollegeData && (
+                            {selectedCollegeData && selectedMajorData && (
                                 <p className="cost-text">
-                                    💰 Annual Tuition: ${(selectedCollegeData.tuitionByMajor[selectedMajor as keyof typeof selectedCollegeData.tuitionByMajor] || 8000).toLocaleString()}/year
+                                    💰 Annual Tuition: ${calculateTuition().toLocaleString()}/year
                                 </p>
                             )}
 

@@ -31,6 +31,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
     const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [currentCourses, setCurrentCourses] = useState<Course[]>([])
+    const [coursesLoading, setCoursesLoading] = useState(false)
 
     // Course info modal state
     const [courseInfoModal, setCourseInfoModal] = useState<any | null>(null)
@@ -52,12 +54,27 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
     const [quizSubmitted, setQuizSubmitted] = useState(false)
     const [quizScore, setQuizScore] = useState<number | null>(null)
 
-    // Sample courses for this semester (in a real app, this would come from the player's curriculum)
-    const currentCourses: Course[] = [
-        { id: 'cs101', title: 'Intro Programming', credits: 4, weekly_hours: 10 },
-        { id: 'cs102', title: 'Data Structures', credits: 4, weekly_hours: 12 },
-        { id: 'ba101', title: 'Intro Business', credits: 3, weekly_hours: 8 }
-    ]
+    useEffect(() => {
+        const loadSemesterCourses = async () => {
+            try {
+                setCoursesLoading(true)
+                const response = await fetch(`/api/exams/semester-courses?player_id=${player.id}`)
+                if (!response.ok) throw new Error('Failed to load semester courses')
+
+                const data = await response.json()
+                setCurrentCourses(data.courses || [])
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load semester courses')
+                setCurrentCourses([])
+            } finally {
+                setCoursesLoading(false)
+            }
+        }
+
+        if (player?.id) {
+            loadSemesterCourses()
+        }
+    }, [player?.id, player?.semester])
 
     const handleCourseInfo = async (courseId: string) => {
         try {
@@ -417,6 +434,12 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                                 <div className="phase-notice">
                                                     <p>⏱️ {phaseInfo.description}</p>
                                                     <p className="notice-sub">Classes are not in session. Use this time for work, internships, or skill development!</p>
+                                                </div>
+                                            )}
+                                            {coursesLoading && <p>Loading courses...</p>}
+                                            {!coursesLoading && currentCourses.length === 0 && (
+                                                <div className="phase-notice">
+                                                    <p>No courses found for your current major and semester.</p>
                                                 </div>
                                             )}
                                             <div className="courses-grid">

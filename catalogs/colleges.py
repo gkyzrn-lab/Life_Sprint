@@ -6,6 +6,8 @@ COLLEGES = {
         "name": "CUNY Baruch College",
         "type": "public",
         "base_tuition_per_year": 7520.0,
+        "curriculum_type": "cuny_baruch",  # Maps to curriculum.py
+        "offered_majors": ["ba", "accounting", "finance", "economics", "liberal_arts"],  # Business-focused public college
         "notes": "Top-ranked public business school with excellent NYC connections. Affordable but requires strong self-direction.",
         "networking_multiplier": 1.0,
         "job_opportunity_bonus": 0,
@@ -29,6 +31,8 @@ COLLEGES = {
     "nyu": {
         "id": "nyu",
         "name": "New York University",
+        "curriculum_type": "nyu",  # Maps to curriculum.py
+        "offered_majors": ["cs", "ba", "engineering", "data_science", "economics", "finance", "communications", "psychology"],  # Comprehensive private university
         "type": "private",
         "base_tuition_per_year": 62000.0,
         "notes": "Elite private university with global prestige. Excellent resources and networking but very expensive.",
@@ -55,6 +59,8 @@ COLLEGES = {
     "columbia": {
         "id": "columbia",
         "name": "Columbia University",
+        "curriculum_type": "columbia",  # Maps to curriculum.py
+        "offered_majors": ["cs", "ba", "engineering", "data_science", "economics", "finance", "mathematics", "psychology", "politics", "history"],  # Full Ivy League offerings
         "type": "ivy_league",
         "base_tuition_per_year": 70200.0,
         "notes": "Ivy League institution with unmatched prestige and network. Most challenging and expensive option.",

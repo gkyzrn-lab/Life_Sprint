@@ -139,7 +139,7 @@ def mark_course_complete(req: MarkCourseCompleteRequest):
     # Validate course belongs to current semester
     sem_data = CURRICULUM.get(p.college_id, {}).get(p.major_id, {}).get(p.semester)
     if sem_data:
-        valid_ids = {c.course_id for c in sem_data.courses}
+        valid_ids = {c.id for c in sem_data.courses}
         if req.course_id not in valid_ids:
             raise HTTPException(
                 status_code=400,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from catalogs.majors import MAJORS
 from catalogs.colleges import COLLEGES
@@ -18,6 +18,21 @@ def majors():
 @router.get("/colleges")
 def colleges():
     return COLLEGES
+
+
+@router.get("/colleges/{college_id}/majors")
+def get_college_majors(college_id: str):
+    """Get only the majors offered by a specific college."""
+    college = COLLEGES.get(college_id)
+    if not college:
+        raise HTTPException(status_code=404, detail="College not found")
+    
+    offered = college.get("offered_majors", [])
+    return {
+        "college_id": college_id,
+        "college_name": college["name"],
+        "majors": {mid: MAJORS[mid] for mid in offered if mid in MAJORS}
+    }
 
 
 @router.get("/housing")

@@ -4,7 +4,7 @@ Provides detailed, engaging topic descriptions for Business Administration cours
 Focuses on practical, real-world applications.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Any
 
 BA_COURSE_TOPICS: Dict[str, Dict[str, Any]] = {
     # SEMESTER 1
