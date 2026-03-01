@@ -34,26 +34,57 @@ export function StorePanel({ player }: StorePanelProps) {
     const [suggestions, setSuggestions] = useState<PurchaseSuggestion[]>([])
     const [history, setHistory] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [isPurchasing, setIsPurchasing] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'available' | 'suggestions' | 'history'>('available')
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null)
     const [purchaseSuccess, setPurchaseSuccess] = useState(false)
 
+    const fetchPurchases = async () => {
+        const response = await fetch(
+            `http://localhost:8000/api/store/available?player_id=${player.id}`
+        )
+        if (!response.ok) {
+            throw new Error('Failed to load purchases')
+        }
+        const data = await response.json()
+        setPurchases(data.purchases || [])
+    }
+
+    const fetchSuggestions = async () => {
+        const response = await fetch(
+            `http://localhost:8000/api/store/suggestions?player_id=${player.id}`
+        )
+        if (!response.ok) {
+            throw new Error('Failed to load suggestions')
+        }
+        const data = await response.json()
+        setSuggestions(data.suggestions || [])
+    }
+
+    const fetchHistory = async () => {
+        const response = await fetch(
+            `http://localhost:8000/api/store/history?player_id=${player.id}`
+        )
+        if (!response.ok) {
+            throw new Error('Failed to load history')
+        }
+        const data = await response.json()
+        setHistory(data.history || [])
+    }
+
+    const refreshStoreData = async () => {
+        await Promise.allSettled([fetchPurchases(), fetchSuggestions(), fetchHistory()])
+    }
+
     // Fetch available purchases
     useEffect(() => {
-        const fetchPurchases = async () => {
+        const initStoreData = async () => {
             try {
                 setLoading(true)
-                const response = await fetch(
-                    `http://localhost:8000/api/store/available?player_id=${player.id}`
-                )
-                if (response.ok) {
-                    const data = await response.json()
-                    setPurchases(data.purchases || [])
-                } else {
-                    setError('Failed to load purchases')
-                }
+                setError(null)
+                await refreshStoreData()
             } catch (err) {
                 setError('Error connecting to store')
                 console.error(err)
@@ -62,41 +93,12 @@ export function StorePanel({ player }: StorePanelProps) {
             }
         }
 
-        const fetchSuggestions = async () => {
-            try {
-                const response = await fetch(
-                    `http://localhost:8000/api/store/suggestions?player_id=${player.id}`
-                )
-                if (response.ok) {
-                    const data = await response.json()
-                    setSuggestions(data.suggestions || [])
-                }
-            } catch (err) {
-                console.error('Error fetching suggestions:', err)
-            }
-        }
-
-        const fetchHistory = async () => {
-            try {
-                const response = await fetch(
-                    `http://localhost:8000/api/store/history?player_id=${player.id}`
-                )
-                if (response.ok) {
-                    const data = await response.json()
-                    setHistory(data.history || [])
-                }
-            } catch (err) {
-                console.error('Error fetching history:', err)
-            }
-        }
-
-        fetchPurchases()
-        fetchSuggestions()
-        fetchHistory()
+        initStoreData()
     }, [player.id])
 
     const handlePurchase = async (purchaseId: string) => {
         try {
+            setIsPurchasing(true)
             setPurchaseMessage(null)
             const response = await fetch(
                 `http://localhost:8000/api/store/purchase/${purchaseId}?player_id=${player.id}`,
@@ -108,10 +110,7 @@ export function StorePanel({ player }: StorePanelProps) {
             if (response.ok) {
                 setPurchaseSuccess(true)
                 setPurchaseMessage(`✅ ${data.message}`)
-                // Refresh purchases and suggestions
-                setTimeout(() => {
-                    window.location.reload()
-                }, 2000)
+                await refreshStoreData()
             } else {
                 setPurchaseSuccess(false)
                 setPurchaseMessage(`❌ ${data.detail || 'Purchase failed'}`)
@@ -120,6 +119,8 @@ export function StorePanel({ player }: StorePanelProps) {
             setPurchaseSuccess(false)
             setPurchaseMessage('❌ Error processing purchase')
             console.error(err)
+        } finally {
+            setIsPurchasing(false)
         }
     }
 
@@ -219,9 +220,9 @@ export function StorePanel({ player }: StorePanelProps) {
                                 <button
                                     className={`purchase-btn ${!purchase.is_affordable ? 'disabled' : ''}`}
                                     onClick={() => handlePurchase(purchase.purchase_id)}
-                                    disabled={!purchase.is_affordable}
+                                    disabled={!purchase.is_affordable || isPurchasing}
                                 >
-                                    {purchase.is_affordable ? 'Buy Now' : 'Too Expensive'}
+                                    {isPurchasing ? 'Processing...' : (purchase.is_affordable ? 'Buy Now' : 'Too Expensive')}
                                 </button>
                             </div>
                         ))}
@@ -252,9 +253,9 @@ export function StorePanel({ player }: StorePanelProps) {
                                     <button
                                         className={`purchase-btn ${!suggestion.is_affordable ? 'disabled' : ''}`}
                                         onClick={() => handlePurchase(suggestion.purchase_id)}
-                                        disabled={!suggestion.is_affordable}
+                                        disabled={!suggestion.is_affordable || isPurchasing}
                                     >
-                                        {suggestion.is_affordable ? 'Buy Now' : 'Too Expensive'}
+                                        {isPurchasing ? 'Processing...' : (suggestion.is_affordable ? 'Buy Now' : 'Too Expensive')}
                                     </button>
                                 </div>
                             ))}
