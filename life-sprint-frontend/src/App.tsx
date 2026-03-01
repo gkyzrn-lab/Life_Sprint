@@ -25,6 +25,21 @@ export function App() {
         setShowNameInput(true)
     }
 
+    const refreshPlayer = async (playerId: string) => {
+        try {
+            const apiBase = import.meta.env.DEV ? 'http://localhost:8000' : '/api'
+            const response = await fetch(`${apiBase}/api/player/${playerId}`)
+            if (response.ok) {
+                const updated = await response.json() as Player
+                setPlayer(updated)
+                return updated
+            }
+        } catch (err) {
+            console.warn('Failed to refresh player:', err)
+        }
+        return null
+    }
+
     // Show name input screen
     if (showNameInput) {
         return (
@@ -62,7 +77,7 @@ export function App() {
     }
 
     // Show game board
-    return <GameBoard player={player} onLogout={handleLogout} />
+    return <GameBoard player={player} onLogout={handleLogout} onPlayerUpdate={setPlayer} onRefreshPlayer={refreshPlayer} />
 }
 
 export default App

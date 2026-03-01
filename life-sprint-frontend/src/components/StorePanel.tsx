@@ -27,6 +27,8 @@ interface PurchaseSuggestion {
 
 interface StorePanelProps {
     player: Player
+    onPlayerUpdate?: (player: Player) => void
+    onRefreshPlayer?: (playerId: string) => Promise<Player | null>
 }
 
 type StoreCacheSnapshot = {
@@ -53,7 +55,7 @@ function setStoreCache(playerId: string, data: Omit<StoreCacheSnapshot, 'updated
     })
 }
 
-export function StorePanel({ player }: StorePanelProps) {
+export function StorePanel({ player, onPlayerUpdate, onRefreshPlayer }: StorePanelProps) {
     const apiBase = getApiBase()
     const [purchases, setPurchases] = useState<Purchase[]>([])
     const [suggestions, setSuggestions] = useState<PurchaseSuggestion[]>([])
@@ -66,6 +68,8 @@ export function StorePanel({ player }: StorePanelProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null)
     const [purchaseSuccess, setPurchaseSuccess] = useState(false)
+    const [lastTransactionEffects, setLastTransactionEffects] = useState<any>(null)
+    const [showEffectsFeedback, setShowEffectsFeedback] = useState(false)
 
     useEffect(() => {
         setDisplayBalance(Number(player.finance?.balance ?? 0))
@@ -187,9 +191,25 @@ export function StorePanel({ player }: StorePanelProps) {
 
             if (response.ok) {
                 setPurchaseSuccess(true)
-                setPurchaseMessage(`✅ ${data.message}`)
+                setPurchaseMessage(`✅ ${data.message || selectedPurchase?.name + ' purchased!'}`)
                 setDisplayBalance(Number(data.balance_after ?? displayBalance))
+
+                // Store effects for feedback display
+                if (data.effects_applied) {
+                    setLastTransactionEffects(data.effects_applied)
+                    setShowEffectsFeedback(true)
+                    window.setTimeout(() => setShowEffectsFeedback(false), 3000)
+                }
+
                 await refreshStoreData()
+
+                // Refresh full player state to sync all stats
+                if (onRefreshPlayer) {
+                    const updated = await onRefreshPlayer(player.id)
+                    if (updated && onPlayerUpdate) {
+                        onPlayerUpdate(updated)
+                    }
+                }
             } else {
                 setPurchaseSuccess(false)
                 setPurchaseMessage(`❌ ${data.detail || 'Purchase failed'}`)
@@ -235,6 +255,20 @@ export function StorePanel({ player }: StorePanelProps) {
             {purchaseMessage && (
                 <div className={`purchase-message ${purchaseSuccess ? 'success' : 'error'}`}>
                     {purchaseMessage}
+                </div>
+            )}
+
+            {showEffectsFeedback && lastTransactionEffects && (
+                <div className="transaction-effects-feedback">
+                    <h4>📊 Effects Applied:</h4>
+                    <div className="effects-list">
+                        {Object.entries(lastTransactionEffects).map(([stat, value]: [string, any]) => (
+                            <div key={stat} className={`effect-item ${Number(value) > 0 ? 'positive' : 'negative'}`}>
+                                <span className="stat-name">{stat}</span>
+                                <span className="stat-change">{Number(value) > 0 ? '+' : ''}{Number(value).toFixed(1)}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 

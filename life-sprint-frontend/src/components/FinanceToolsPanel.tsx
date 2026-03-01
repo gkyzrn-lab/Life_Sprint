@@ -14,6 +14,8 @@ import './FinanceToolsPanel.css'
 
 interface FinanceToolsPanelProps {
     player: Player
+    onPlayerUpdate?: (player: Player) => void
+    onRefreshPlayer?: (playerId: string) => Promise<Player | null>
 }
 
 interface FinanceSnapshot {
@@ -341,8 +343,8 @@ export default function FinanceToolsPanel({ player }: FinanceToolsPanelProps) {
         ].slice(0, 25))
     }
 
-    const refreshFromServer = async () => {
-        const fresh = await getPlayer(player.id, { forceRefresh: true })
+    const refreshFromServer = async (forceRefresh: boolean = true) => {
+        const fresh = await getPlayer(player.id, { forceRefresh })
         setSnapshot({
             balance: Number(fresh.finance?.balance ?? 0),
             monthlyExpenses: Number(fresh.finance?.monthly_expenses ?? 0),
@@ -353,6 +355,12 @@ export default function FinanceToolsPanel({ player }: FinanceToolsPanelProps) {
             annualIncome: Number(fresh.finance?.repayment_profile?.annual_income ?? 0),
             familySize: Number(fresh.finance?.repayment_profile?.family_size ?? 1),
         })
+
+        // Update parent player state
+        if (onPlayerUpdate) {
+            onPlayerUpdate(fresh)
+        }
+        return fresh
     }
 
     const runAction = async (fn: () => Promise<void>, actionLabel?: string, actionDetails?: string) => {

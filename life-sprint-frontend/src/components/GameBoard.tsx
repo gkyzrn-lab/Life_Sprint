@@ -28,6 +28,8 @@ import './GameBoard.css'
 interface GameBoardProps {
     player: Player
     onLogout: () => void
+    onPlayerUpdate: (player: Player) => void
+    onRefreshPlayer: (playerId: string) => Promise<Player | null>
 }
 
 type GameTab = 'stats' | 'finance' | 'planning' | 'academics' | 'visual' | 'analytics' | 'store'
@@ -55,7 +57,7 @@ interface LessonConceptGameResult {
     totalQuestions: number
 }
 
-export function GameBoard({ player, onLogout }: GameBoardProps) {
+export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }: GameBoardProps) {
     const [activeTab, setActiveTab] = useState<GameTab>('stats')
     const [tabTransitioning, setTabTransitioning] = useState(false)
     const [classContent, setClassContent] = useState<ClassContent | null>(null)
@@ -1289,7 +1291,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
                     {activeTab === 'finance' && (
                         <section className="tab-content">
-                            <FinanceToolsPanel player={player} />
+                            <FinanceToolsPanel player={player} onPlayerUpdate={onPlayerUpdate} onRefreshPlayer={onRefreshPlayer} />
                         </section>
                     )}
 
@@ -2228,7 +2230,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
             {activeTab === 'store' && (
                 <section className="tab-content">
-                    <StorePanel player={player} />
+                    <StorePanel player={player} onPlayerUpdate={onPlayerUpdate} onRefreshPlayer={onRefreshPlayer} />
                 </section>
             )}
         </div>
