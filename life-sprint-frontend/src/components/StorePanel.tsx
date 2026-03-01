@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Player } from '../utils/api'
 import './StorePanel.css'
 

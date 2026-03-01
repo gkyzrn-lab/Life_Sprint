@@ -19,6 +19,7 @@ import { getSemesterInfo, getCurrentPhase } from '../utils/semesterUtils'
 import LifeReadinessPanel from './LifeReadinessPanel'
 import VisualExperiencePanel from './VisualExperiencePanel'
 import FinanceToolsPanel from './FinanceToolsPanel'
+import { StorePanel } from './StorePanel'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -1940,8 +1941,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
             {activeTab === 'store' && (
                 <section className="tab-content">
-                    <h2>🛍️ Store</h2>
-                    <p>Store features coming soon...</p>
+                    <StorePanel player={player} />
                 </section>
             )}
         </div>
