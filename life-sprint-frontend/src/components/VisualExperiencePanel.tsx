@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Player, MiniGameSummary } from '../utils/api'
+import { UIBadge, UIButton, UICard, UIProgressBar } from './ui/UIPrimitives'
 import './VisualExperiencePanel.css'
 
 interface CourseLite {
@@ -25,6 +26,17 @@ export default function VisualExperiencePanel({
     onJumpToAcademics,
 }: VisualExperiencePanelProps) {
     const [theme, setTheme] = useState<'aurora' | 'midnight'>('aurora')
+
+    useEffect(() => {
+        const stored = localStorage.getItem('ls_theme')
+        if (stored === 'aurora' || stored === 'midnight') {
+            setTheme(stored)
+        }
+    }, [])
+
+    useEffect(() => {
+        localStorage.setItem('ls_theme', theme)
+    }, [theme])
 
     const metrics = useMemo(() => {
         const gpa = Number(player.stats?.gpa ?? 0)
@@ -93,45 +105,46 @@ export default function VisualExperiencePanel({
                     <h2>✨ Visual Command Center</h2>
                     <p>Dashboard, progress, achievements, mini-game highlights, and trend visuals in one place.</p>
                 </div>
-                <button
+                <UIButton
                     type="button"
                     className="theme-toggle"
+                    aria-label="Toggle visual theme"
                     onClick={() => setTheme(prev => (prev === 'aurora' ? 'midnight' : 'aurora'))}
                 >
                     {theme === 'aurora' ? '🌙 Midnight Theme' : '🌈 Aurora Theme'}
-                </button>
+                </UIButton>
             </div>
 
             <div className="visual-kpis">
-                <article className="vk-card">
+                <UICard className="vk-card">
                     <span className="vk-label">Life Readiness</span>
                     <strong>{metrics.readiness.toFixed(0)}%</strong>
-                    <div className="meter"><div style={{ width: `${metrics.readiness}%` }} /></div>
-                </article>
-                <article className="vk-card">
+                    <UIProgressBar value={metrics.readiness} />
+                </UICard>
+                <UICard className="vk-card">
                     <span className="vk-label">Academic Power</span>
                     <strong>{metrics.gpa.toFixed(2)} GPA</strong>
-                    <div className="meter"><div style={{ width: `${metrics.normalizedGpa}%` }} /></div>
-                </article>
-                <article className="vk-card">
+                    <UIProgressBar value={metrics.normalizedGpa} />
+                </UICard>
+                <UICard className="vk-card">
                     <span className="vk-label">Wellness Index</span>
                     <strong>{metrics.health.toFixed(0)}%</strong>
-                    <div className="meter"><div style={{ width: `${metrics.normalizedHealth}%` }} /></div>
-                </article>
-                <article className="vk-card">
+                    <UIProgressBar value={metrics.normalizedHealth} />
+                </UICard>
+                <UICard className="vk-card">
                     <span className="vk-label">Runway</span>
                     <strong>{metrics.savingsRunway.toFixed(0)}%</strong>
-                    <div className="meter"><div style={{ width: `${metrics.savingsRunway}%` }} /></div>
-                </article>
+                    <UIProgressBar value={metrics.savingsRunway} />
+                </UICard>
             </div>
 
             <div className="visual-grid">
-                <article className="visual-card">
+                <UICard className="visual-card">
                     <h3>📈 Stat Trends</h3>
                     <div className="trend-rows">
-                        <div><span>Stress</span><div className="meter negative"><div style={{ width: `${metrics.normalizedStress}%` }} /></div></div>
-                        <div><span>Network</span><div className="meter"><div style={{ width: `${metrics.normalizedNetwork}%` }} /></div></div>
-                        <div><span>Health</span><div className="meter"><div style={{ width: `${metrics.normalizedHealth}%` }} /></div></div>
+                        <div><span>Stress</span><UIProgressBar value={metrics.normalizedStress} danger /></div>
+                        <div><span>Network</span><UIProgressBar value={metrics.normalizedNetwork} /></div>
+                        <div><span>Health</span><UIProgressBar value={metrics.normalizedHealth} /></div>
                     </div>
                     <svg viewBox="0 0 240 80" className="sparkline" role="img" aria-label="Readiness trend">
                         <polyline
@@ -141,21 +154,37 @@ export default function VisualExperiencePanel({
                             points={`0,60 40,${70 - metrics.normalizedGpa * 0.3} 90,${70 - metrics.normalizedHealth * 0.35} 140,${70 - metrics.normalizedNetwork * 0.35} 190,${70 - metrics.readiness * 0.45} 240,${70 - metrics.savingsRunway * 0.3}`}
                         />
                     </svg>
-                </article>
+                    <h4 className="subchart-title">💰 Finance Signal</h4>
+                    <div className="finance-bars" aria-label="Finance comparison chart" role="img">
+                        <div className="finance-bar-item">
+                            <span>Balance</span>
+                            <UIProgressBar value={Math.min(100, (metrics.balance / 10000) * 100)} />
+                        </div>
+                        <div className="finance-bar-item">
+                            <span>Expenses</span>
+                            <UIProgressBar value={Math.min(100, (metrics.expenses / 3000) * 100)} danger />
+                        </div>
+                        <div className="finance-bar-item">
+                            <span>Runway</span>
+                            <UIProgressBar value={metrics.savingsRunway} />
+                        </div>
+                    </div>
+                </UICard>
 
-                <article className="visual-card">
+                <UICard className="visual-card">
                     <h3>🏅 Achievement Badges</h3>
                     <div className="badge-grid">
                         {achievements.map(a => (
                             <div key={a.label} className={`badge-chip ${a.unlocked ? 'on' : 'off'}`}>
                                 <span>{a.icon}</span>
                                 <small>{a.label}</small>
+                                <UIBadge tone={a.unlocked ? 'success' : 'neutral'}>{a.unlocked ? 'Unlocked' : 'Locked'}</UIBadge>
                             </div>
                         ))}
                     </div>
-                </article>
+                </UICard>
 
-                <article className="visual-card">
+                <UICard className="visual-card">
                     <h3>🧠 Course Progress View</h3>
                     <div className="course-list">
                         {currentCourses.length === 0 ? (
@@ -169,20 +198,20 @@ export default function VisualExperiencePanel({
                                             <strong>{course.title}</strong>
                                             <span>{progress}%</span>
                                         </div>
-                                        <div className="meter"><div style={{ width: `${progress}%` }} /></div>
+                                        <UIProgressBar value={progress} />
                                     </div>
                                 )
                             })
                         )}
                     </div>
-                </article>
+                </UICard>
 
-                <article className="visual-card">
+                <UICard className="visual-card">
                     <h3>🎮 Mini-Game Spotlight</h3>
                     {gameSpotlight.length === 0 ? (
                         <>
                             <p className="muted">No mini-games loaded yet for this course selection.</p>
-                            <button type="button" className="jump-btn" onClick={onJumpToAcademics}>Go to Academics</button>
+                            <UIButton type="button" className="jump-btn" onClick={onJumpToAcademics}>Go to Academics</UIButton>
                         </>
                     ) : (
                         <div className="spotlight-list">
@@ -198,10 +227,10 @@ export default function VisualExperiencePanel({
                                     </div>
                                 </div>
                             ))}
-                            <button type="button" className="jump-btn" onClick={onJumpToAcademics}>Open Mini-Games</button>
+                            <UIButton type="button" className="jump-btn" onClick={onJumpToAcademics}>Open Mini-Games</UIButton>
                         </div>
                     )}
-                </article>
+                </UICard>
             </div>
         </section>
     )

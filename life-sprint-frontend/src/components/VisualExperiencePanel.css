@@ -2,6 +2,19 @@
     border-radius: 18px;
     padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.18);
+    animation: panelFade .28s ease;
+}
+
+@keyframes panelFade {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .visual-aurora {
@@ -32,18 +45,12 @@
 
 .theme-toggle,
 .jump-btn {
-    border: none;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-weight: 700;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.92);
-    color: #222;
+    min-height: 38px;
 }
 
 .visual-midnight .theme-toggle,
 .visual-midnight .jump-btn {
-    background: #f4f7ff;
+    background: rgba(255, 255, 255, 0.96);
 }
 
 .visual-kpis {
@@ -121,6 +128,24 @@
     align-items: center;
 }
 
+.subchart-title {
+    margin: 14px 0 8px;
+    font-size: 0.95rem;
+    opacity: 0.86;
+}
+
+.finance-bars {
+    display: grid;
+    gap: 8px;
+}
+
+.finance-bar-item {
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
 .sparkline {
     width: 100%;
     color: #4f46e5;
@@ -139,6 +164,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: space-between;
 }
 
 .badge-chip small {
@@ -201,6 +227,14 @@
     opacity: 0.75;
 }
 
+.visual-card .ui-progress {
+    margin-top: 6px;
+}
+
+.visual-card .ui-badge {
+    margin-left: auto;
+}
+
 @media (max-width: 980px) {
     .visual-grid {
         grid-template-columns: 1fr;
@@ -208,5 +242,9 @@
 
     .visual-topbar {
         flex-direction: column;
+    }
+
+    .badge-grid {
+        grid-template-columns: 1fr;
     }
 }

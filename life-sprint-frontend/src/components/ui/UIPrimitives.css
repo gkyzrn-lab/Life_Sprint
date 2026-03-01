@@ -1,0 +1,100 @@
+.ui-card {
+    background: var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.ui-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+}
+
+.ui-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.ui-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.ui-btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-2));
+    box-shadow: 0 10px 20px rgba(79, 70, 229, .25);
+}
+
+.ui-btn-secondary {
+    color: var(--color-text);
+    background: rgba(255, 255, 255, .9);
+    border: 1px solid #dbe3f5;
+}
+
+.ui-btn-ghost {
+    color: var(--color-text);
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, .35);
+}
+
+.ui-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.ui-badge-neutral {
+    background: rgba(148, 163, 184, .18);
+    color: #334155;
+}
+
+.ui-badge-success {
+    background: rgba(16, 185, 129, .16);
+    color: #065f46;
+}
+
+.ui-badge-warning {
+    background: rgba(245, 158, 11, .18);
+    color: #92400e;
+}
+
+.ui-badge-danger {
+    background: rgba(239, 68, 68, .16);
+    color: #991b1b;
+}
+
+.ui-progress {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, .15);
+}
+
+.ui-progress>div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-2));
+}
+
+.ui-progress.danger>div {
+    background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.ui-skeleton {
+    border-radius: 8px;
+    background: linear-gradient(110deg, rgba(226, 232, 240, .8) 20%, rgba(241, 245, 249, .95) 45%, rgba(226, 232, 240, .8) 70%);
+    background-size: 200% 100%;
+    animation: uiShimmer 1.2s linear infinite;
+}
+
+@keyframes uiShimmer {
+    to {
+        background-position-x: -200%;
+    }
+}

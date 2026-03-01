@@ -971,46 +971,53 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
             </header>
 
             <div className="game-content">
-                <nav className="game-nav">
+                <nav className="game-nav" aria-label="Primary game navigation">
                     <button
                         className={`nav-btn ${activeTab === 'stats' ? 'active' : ''}`}
                         onClick={() => setActiveTab('stats')}
+                        aria-label="Open stats tab"
                     >
                         📊 Stats
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'finance' ? 'active' : ''}`}
                         onClick={() => setActiveTab('finance')}
+                        aria-label="Open finance tab"
                     >
                         💰 Finance
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'planning' ? 'active' : ''}`}
                         onClick={() => setActiveTab('planning')}
+                        aria-label="Open planning tab"
                     >
                         📅 Planning
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'academics' ? 'active' : ''}`}
                         onClick={() => setActiveTab('academics')}
+                        aria-label="Open academics tab"
                     >
                         🎓 Academics
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'visual' ? 'active' : ''}`}
                         onClick={() => setActiveTab('visual')}
+                        aria-label="Open visual dashboard tab"
                     >
                         ✨ Visual
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'analytics' ? 'active' : ''}`}
                         onClick={() => setActiveTab('analytics')}
+                        aria-label="Open analytics tab"
                     >
                         📊 Analytics
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'store' ? 'active' : ''}`}
                         onClick={() => setActiveTab('store')}
+                        aria-label="Open store tab"
                     >
                         🛍️ Store
                     </button>
@@ -1128,7 +1135,13 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                                     <p className="notice-sub">Classes are not in session. Use this time for work, internships, or skill development!</p>
                                                 </div>
                                             )}
-                                            {coursesLoading && <p>Loading courses...</p>}
+                                            {coursesLoading && (
+                                                <div className="courses-loading-skeleton" aria-label="Loading courses">
+                                                    <div className="course-skeleton" />
+                                                    <div className="course-skeleton" />
+                                                    <div className="course-skeleton" />
+                                                </div>
+                                            )}
                                             {!coursesLoading && currentCourses.length === 0 && (
                                                 <div className="phase-notice">
                                                     <p>No courses found for your current major and semester.</p>
