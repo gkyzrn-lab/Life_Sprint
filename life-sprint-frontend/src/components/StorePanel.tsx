@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Player } from '../utils/api'
+import { getApiBase, Player } from '../utils/api'
 import './StorePanel.css'
 
 interface Purchase {
@@ -29,59 +29,117 @@ interface StorePanelProps {
     player: Player
 }
 
+type StoreCacheSnapshot = {
+    purchases: Purchase[]
+    suggestions: PurchaseSuggestion[]
+    history: any[]
+    updatedAt: number
+}
+
+const STORE_CACHE_TTL_MS = 15000
+const storeCache = new Map<string, StoreCacheSnapshot>()
+
+function getStoreCache(playerId: string): StoreCacheSnapshot | null {
+    const cached = storeCache.get(playerId)
+    if (!cached) return null
+    if (Date.now() - cached.updatedAt > STORE_CACHE_TTL_MS) return null
+    return cached
+}
+
+function setStoreCache(playerId: string, data: Omit<StoreCacheSnapshot, 'updatedAt'>): void {
+    storeCache.set(playerId, {
+        ...data,
+        updatedAt: Date.now(),
+    })
+}
+
 export function StorePanel({ player }: StorePanelProps) {
+    const apiBase = getApiBase()
     const [purchases, setPurchases] = useState<Purchase[]>([])
     const [suggestions, setSuggestions] = useState<PurchaseSuggestion[]>([])
     const [history, setHistory] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isPurchasing, setIsPurchasing] = useState(false)
+    const [displayBalance, setDisplayBalance] = useState<number>(Number(player.finance?.balance ?? 0))
     const [error, setError] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'available' | 'suggestions' | 'history'>('available')
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null)
     const [purchaseSuccess, setPurchaseSuccess] = useState(false)
 
-    const fetchPurchases = async () => {
+    useEffect(() => {
+        setDisplayBalance(Number(player.finance?.balance ?? 0))
+    }, [player.id, player.finance?.balance])
+
+    const fetchPurchases = async (): Promise<Purchase[]> => {
         const response = await fetch(
-            `http://localhost:8000/api/store/available?player_id=${player.id}`
+            `${apiBase}/api/store/available?player_id=${player.id}`
         )
         if (!response.ok) {
             throw new Error('Failed to load purchases')
         }
         const data = await response.json()
-        setPurchases(data.purchases || [])
+        const next = data.purchases || []
+        setPurchases(next)
+        return next
     }
 
-    const fetchSuggestions = async () => {
+    const fetchSuggestions = async (): Promise<PurchaseSuggestion[]> => {
         const response = await fetch(
-            `http://localhost:8000/api/store/suggestions?player_id=${player.id}`
+            `${apiBase}/api/store/suggestions?player_id=${player.id}`
         )
         if (!response.ok) {
             throw new Error('Failed to load suggestions')
         }
         const data = await response.json()
-        setSuggestions(data.suggestions || [])
+        const next = data.suggestions || []
+        setSuggestions(next)
+        return next
     }
 
-    const fetchHistory = async () => {
+    const fetchHistory = async (): Promise<any[]> => {
         const response = await fetch(
-            `http://localhost:8000/api/store/history?player_id=${player.id}`
+            `${apiBase}/api/store/history?player_id=${player.id}`
         )
         if (!response.ok) {
             throw new Error('Failed to load history')
         }
         const data = await response.json()
-        setHistory(data.history || [])
+        const next = data.history || []
+        setHistory(next)
+        return next
     }
 
     const refreshStoreData = async () => {
-        await Promise.allSettled([fetchPurchases(), fetchSuggestions(), fetchHistory()])
+        const [purchasesResult, suggestionsResult, historyResult] = await Promise.all([
+            fetchPurchases(),
+            fetchSuggestions(),
+            fetchHistory(),
+        ])
+
+        if (purchasesResult && suggestionsResult && historyResult) {
+            setStoreCache(player.id, {
+                purchases: purchasesResult,
+                suggestions: suggestionsResult,
+                history: historyResult,
+            })
+        }
     }
 
     // Fetch available purchases
     useEffect(() => {
         const initStoreData = async () => {
             try {
+                const cached = getStoreCache(player.id)
+                if (cached) {
+                    setPurchases(cached.purchases)
+                    setSuggestions(cached.suggestions)
+                    setHistory(cached.history)
+                    setLoading(false)
+                    refreshStoreData().catch(() => undefined)
+                    return
+                }
+
                 setLoading(true)
                 setError(null)
                 await refreshStoreData()
@@ -97,11 +155,31 @@ export function StorePanel({ player }: StorePanelProps) {
     }, [player.id])
 
     const handlePurchase = async (purchaseId: string) => {
+        const selectedPurchase = purchases.find((p) => p.purchase_id === purchaseId)
+            || suggestions.find((s) => s.purchase_id === purchaseId)
+        const selectedCost = Number(selectedPurchase?.cost ?? 0)
+        const optimisticHistoryId = `optimistic-${Date.now()}`
+
         try {
             setIsPurchasing(true)
             setPurchaseMessage(null)
+            if (selectedCost > 0) {
+                setDisplayBalance((prev) => Math.max(0, prev - selectedCost))
+                setHistory((prev) => [
+                    {
+                        _optimistic: true,
+                        _id: optimisticHistoryId,
+                        purchase_name: selectedPurchase?.name || 'Purchase pending',
+                        cost: selectedCost,
+                        semester: player.semester,
+                        effects: {},
+                    },
+                    ...prev,
+                ])
+            }
+
             const response = await fetch(
-                `http://localhost:8000/api/store/purchase/${purchaseId}?player_id=${player.id}`,
+                `${apiBase}/api/store/purchase/${purchaseId}?player_id=${player.id}`,
                 { method: 'POST' }
             )
 
@@ -110,14 +188,23 @@ export function StorePanel({ player }: StorePanelProps) {
             if (response.ok) {
                 setPurchaseSuccess(true)
                 setPurchaseMessage(`✅ ${data.message}`)
+                setDisplayBalance(Number(data.balance_after ?? displayBalance))
                 await refreshStoreData()
             } else {
                 setPurchaseSuccess(false)
                 setPurchaseMessage(`❌ ${data.detail || 'Purchase failed'}`)
+                if (selectedCost > 0) {
+                    setDisplayBalance((prev) => prev + selectedCost)
+                }
+                setHistory((prev) => prev.filter((item) => item?._id !== optimisticHistoryId))
             }
         } catch (err) {
             setPurchaseSuccess(false)
             setPurchaseMessage('❌ Error processing purchase')
+            if (selectedCost > 0) {
+                setDisplayBalance((prev) => prev + selectedCost)
+            }
+            setHistory((prev) => prev.filter((item) => item?._id !== optimisticHistoryId))
             console.error(err)
         } finally {
             setIsPurchasing(false)
@@ -142,7 +229,7 @@ export function StorePanel({ player }: StorePanelProps) {
         <div className="store-panel">
             <div className="store-header">
                 <h2>🛍️ Life Store</h2>
-                <div className="store-balance">Balance: ${player.finance?.balance.toFixed(2) || '0.00'}</div>
+                <div className="store-balance">Balance: ${displayBalance.toFixed(2)}</div>
             </div>
 
             {purchaseMessage && (
@@ -275,7 +362,7 @@ export function StorePanel({ player }: StorePanelProps) {
                                 <div key={idx} className="history-item">
                                     <div className="history-header">
                                         <h4>{item.purchase_name}</h4>
-                                        <span className="history-cost">-${item.cost.toFixed(2)}</span>
+                                        <span className="history-cost">-${Number(item.cost || 0).toFixed(2)}</span>
                                     </div>
                                     <div className="history-details">
                                         <small>Semester {item.semester}</small>

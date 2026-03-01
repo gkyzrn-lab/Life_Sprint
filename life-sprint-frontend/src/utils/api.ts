@@ -1,5 +1,76 @@
 const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '/api'
 
+type CacheEntry<T> = {
+    data: T
+    expiresAt: number
+}
+
+const responseCache = new Map<string, CacheEntry<unknown>>()
+const inflightRequests = new Map<string, Promise<unknown>>()
+const DEFAULT_CACHE_TTL_MS = 15000
+
+function getCached<T>(key: string): CacheEntry<T> | null {
+    const entry = responseCache.get(key)
+    if (!entry) return null
+    return entry as CacheEntry<T>
+}
+
+function setCached<T>(key: string, data: T, ttlMs: number = DEFAULT_CACHE_TTL_MS): void {
+    responseCache.set(key, {
+        data,
+        expiresAt: Date.now() + ttlMs,
+    })
+}
+
+async function fetchJsonWithCache<T>(
+    key: string,
+    url: string,
+    options?: {
+        ttlMs?: number
+        forceRefresh?: boolean
+        staleWhileRevalidate?: boolean
+    },
+): Promise<T> {
+    const ttlMs = options?.ttlMs ?? DEFAULT_CACHE_TTL_MS
+    const staleWhileRevalidate = options?.staleWhileRevalidate ?? true
+    const now = Date.now()
+    const cached = getCached<T>(key)
+
+    if (!options?.forceRefresh && cached && cached.expiresAt > now) {
+        return cached.data
+    }
+
+    const existingInflight = inflightRequests.get(key) as Promise<T> | undefined
+    if (existingInflight) {
+        if (cached && staleWhileRevalidate && !options?.forceRefresh) {
+            return cached.data
+        }
+        return existingInflight
+    }
+
+    const networkPromise = (async () => {
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`Request failed: ${response.statusText}`)
+        const data = await response.json() as T
+        setCached(key, data, ttlMs)
+        return data
+    })().finally(() => {
+        inflightRequests.delete(key)
+    })
+
+    inflightRequests.set(key, networkPromise)
+
+    if (cached && staleWhileRevalidate && !options?.forceRefresh) {
+        return cached.data
+    }
+
+    return networkPromise
+}
+
+export function getApiBase(): string {
+    return API_BASE
+}
+
 export interface Player {
     id: string
     name: string
@@ -291,10 +362,16 @@ export async function createPlayer(
     return response.json()
 }
 
-export async function getPlayer(playerId: string): Promise<Player> {
-    const response = await fetch(`${API_BASE}/player/${playerId}`)
-    if (!response.ok) throw new Error(`Failed to fetch player: ${response.statusText}`)
-    return response.json()
+export async function getPlayer(playerId: string, options?: { forceRefresh?: boolean }): Promise<Player> {
+    return fetchJsonWithCache<Player>(
+        `player:${playerId}`,
+        `${API_BASE}/player/${playerId}`,
+        {
+            ttlMs: 8000,
+            forceRefresh: options?.forceRefresh,
+            staleWhileRevalidate: true,
+        },
+    )
 }
 
 // Finance Tools
@@ -508,9 +585,14 @@ export async function markMiniGameSeen(playerId: string, gameId: string, courseI
 }
 
 export async function getLifeReadinessAnalytics(playerId: string): Promise<LifeReadinessResponse> {
-    const response = await fetch(`${API_BASE}/curriculum/analytics/${playerId}`)
-    if (!response.ok) throw new Error(`Failed to fetch life readiness analytics: ${response.statusText}`)
-    return response.json()
+    return fetchJsonWithCache<LifeReadinessResponse>(
+        `analytics:${playerId}`,
+        `${API_BASE}/curriculum/analytics/${playerId}`,
+        {
+            ttlMs: 12000,
+            staleWhileRevalidate: true,
+        },
+    )
 }
 
 export async function submitMiniGame(
@@ -551,4 +633,32 @@ export async function submitLessonGame(
     })
     if (!response.ok) throw new Error(`Failed to submit lesson game: ${response.statusText}`)
     return response.json()
+}
+
+export async function prefetchFinanceData(playerId: string): Promise<void> {
+    try {
+        await getPlayer(playerId)
+    } catch {
+        // silent prefetch
+    }
+}
+
+export async function prefetchAnalyticsData(playerId: string): Promise<void> {
+    try {
+        await getLifeReadinessAnalytics(playerId)
+    } catch {
+        // silent prefetch
+    }
+}
+
+export async function prefetchStoreData(playerId: string): Promise<void> {
+    try {
+        await Promise.allSettled([
+            fetch(`${API_BASE}/api/store/available?player_id=${encodeURIComponent(playerId)}`),
+            fetch(`${API_BASE}/api/store/suggestions?player_id=${encodeURIComponent(playerId)}`),
+            fetch(`${API_BASE}/api/store/history?player_id=${encodeURIComponent(playerId)}`),
+        ])
+    } catch {
+        // silent prefetch
+    }
 }

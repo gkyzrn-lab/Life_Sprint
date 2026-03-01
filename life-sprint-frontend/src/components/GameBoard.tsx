@@ -8,6 +8,9 @@ import {
     markMiniGameSeen,
     submitLessonGame,
     submitMiniGame,
+    prefetchAnalyticsData,
+    prefetchFinanceData,
+    prefetchStoreData,
     MiniGameSummary,
     MiniGameDetails,
     LessonGameDetails,
@@ -54,6 +57,7 @@ interface LessonConceptGameResult {
 
 export function GameBoard({ player, onLogout }: GameBoardProps) {
     const [activeTab, setActiveTab] = useState<GameTab>('stats')
+    const [tabTransitioning, setTabTransitioning] = useState(false)
     const [classContent, setClassContent] = useState<ClassContent | null>(null)
     const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
@@ -106,6 +110,10 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
         stakes: string
         game: MiniGameDetails
     } | null>(null)
+    const [planningDraft, setPlanningDraft] = useState('')
+    const [planningDraftStatus, setPlanningDraftStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+    const [debouncedSelectedCourse, setDebouncedSelectedCourse] = useState<string | null>(null)
+    const [sortedMiniGames, setSortedMiniGames] = useState<MiniGameSummary[]>([])
     const randomMiniGameTimerRef = useRef<number | null>(null)
     const recommendedLaunchTimerRef = useRef<number | null>(null)
     const randomMomentsByCourseRef = useRef<Record<string, number>>({})
@@ -116,6 +124,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
     const classSessionStartedAtRef = useRef<number>(0)
     const lastMiniGameClosedAtRef = useRef<number>(0)
     const MAX_RANDOM_MOMENTS_PER_COURSE = 2
+    const prefetchedTabsRef = useRef<Set<GameTab>>(new Set())
 
     const clampNumber = (value: number, min: number, max: number): number => {
         return Math.max(min, Math.min(max, value))
@@ -941,21 +950,65 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
         setQuizScore(null)
     }
 
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setDebouncedSelectedCourse(selectedCourse)
+        }, 120)
+        return () => window.clearTimeout(timer)
+    }, [selectedCourse])
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setTabTransitioning(false)
+        }, 140)
+        setTabTransitioning(true)
+        return () => window.clearTimeout(timer)
+    }, [activeTab])
+
+    useEffect(() => {
+        const key = `planning_draft_${player.id}`
+        const existing = localStorage.getItem(key)
+        if (existing) {
+            setPlanningDraft(existing)
+        } else {
+            setPlanningDraft('')
+        }
+        setPlanningDraftStatus('idle')
+    }, [player.id])
+
+    useEffect(() => {
+        if (!player.id) return
+        setPlanningDraftStatus('saving')
+        const timer = window.setTimeout(() => {
+            localStorage.setItem(`planning_draft_${player.id}`, planningDraft)
+            setPlanningDraftStatus('saved')
+            window.setTimeout(() => setPlanningDraftStatus('idle'), 900)
+        }, 280)
+        return () => window.clearTimeout(timer)
+    }, [planningDraft, player.id])
+
     const semesterInfo = getSemesterInfo(player.semester)
     const phaseInfo = getCurrentPhase(player.semester)
-    const adaptiveMode = selectedCourse ? getAdaptiveMode(selectedCourse) : 'balanced'
+    const adaptiveMode = debouncedSelectedCourse ? getAdaptiveMode(debouncedSelectedCourse) : 'balanced'
     const adaptiveModeLabel = adaptiveMode === 'recovery'
         ? 'Recovery Mode: easier moments prioritized'
         : adaptiveMode === 'challenge'
             ? 'Challenge Mode: harder moments prioritized'
             : 'Balanced Mode: mixed difficulty'
 
-    const sortedMiniGames = [...courseMiniGames].sort((a, b) => {
-        const target = adaptiveMode === 'recovery' ? 0.35 : adaptiveMode === 'challenge' ? 0.8 : 0.55
-        const da = Math.abs(getGameChallengeScore(a) - target)
-        const db = Math.abs(getGameChallengeScore(b) - target)
-        return da - db
-    })
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            const next = [...courseMiniGames].sort((a, b) => {
+                const target = adaptiveMode === 'recovery' ? 0.35 : adaptiveMode === 'challenge' ? 0.8 : 0.55
+                const da = Math.abs(getGameChallengeScore(a) - target)
+                const db = Math.abs(getGameChallengeScore(b) - target)
+                return da - db
+            })
+            setSortedMiniGames(next)
+        }, 90)
+
+        return () => window.clearTimeout(timer)
+    }, [courseMiniGames, adaptiveMode])
 
     const gpaValue = Number(player.stats?.gpa ?? 0)
     const stressValue = Number(player.stats?.stress ?? 0)
@@ -1047,6 +1100,25 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
         })
     }
 
+    const prefetchTab = (tab: GameTab) => {
+        if (prefetchedTabsRef.current.has(tab)) return
+        prefetchedTabsRef.current.add(tab)
+
+        if (tab === 'finance') {
+            prefetchFinanceData(player.id)
+            return
+        }
+
+        if (tab === 'analytics') {
+            prefetchAnalyticsData(player.id)
+            return
+        }
+
+        if (tab === 'store') {
+            prefetchStoreData(player.id)
+        }
+    }
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -1069,6 +1141,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'stats' ? 'active' : ''}`}
                         onClick={() => setActiveTab('stats')}
+                        onMouseEnter={() => prefetchTab('stats')}
+                        onFocus={() => prefetchTab('stats')}
                         aria-label="Open stats tab"
                     >
                         📊 Stats
@@ -1076,6 +1150,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'finance' ? 'active' : ''}`}
                         onClick={() => setActiveTab('finance')}
+                        onMouseEnter={() => prefetchTab('finance')}
+                        onFocus={() => prefetchTab('finance')}
                         aria-label="Open finance tab"
                     >
                         💰 Finance
@@ -1083,6 +1159,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'planning' ? 'active' : ''}`}
                         onClick={() => setActiveTab('planning')}
+                        onMouseEnter={() => prefetchTab('planning')}
+                        onFocus={() => prefetchTab('planning')}
                         aria-label="Open planning tab"
                     >
                         📅 Planning
@@ -1090,6 +1168,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'academics' ? 'active' : ''}`}
                         onClick={() => setActiveTab('academics')}
+                        onMouseEnter={() => prefetchTab('academics')}
+                        onFocus={() => prefetchTab('academics')}
                         aria-label="Open academics tab"
                     >
                         🎓 Academics
@@ -1097,6 +1177,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'visual' ? 'active' : ''}`}
                         onClick={() => setActiveTab('visual')}
+                        onMouseEnter={() => prefetchTab('visual')}
+                        onFocus={() => prefetchTab('visual')}
                         aria-label="Open visual dashboard tab"
                     >
                         ✨ Visual
@@ -1104,6 +1186,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'analytics' ? 'active' : ''}`}
                         onClick={() => setActiveTab('analytics')}
+                        onMouseEnter={() => prefetchTab('analytics')}
+                        onFocus={() => prefetchTab('analytics')}
                         aria-label="Open analytics tab"
                     >
                         📊 Analytics
@@ -1111,6 +1195,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                     <button
                         className={`nav-btn ${activeTab === 'store' ? 'active' : ''}`}
                         onClick={() => setActiveTab('store')}
+                        onMouseEnter={() => prefetchTab('store')}
+                        onFocus={() => prefetchTab('store')}
                         aria-label="Open store tab"
                     >
                         🛍️ Store
@@ -1118,6 +1204,16 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                 </nav>
 
                 <main className="game-main">
+                    {tabTransitioning && (
+                        <div className="tab-switch-skeleton" aria-label="Loading tab content">
+                            <div className="skeleton-line long" />
+                            <div className="skeleton-grid">
+                                <div className="skeleton-card" />
+                                <div className="skeleton-card" />
+                                <div className="skeleton-card" />
+                            </div>
+                        </div>
+                    )}
                     {activeTab === 'stats' && (
                         <section className="tab-content">
                             <h2>Your Stats</h2>
@@ -1248,6 +1344,19 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                         </div>
                                     </div>
                                 )}
+
+                                <div className="planning-draft-card">
+                                    <div className="planning-draft-head">
+                                        <h3>Quick Plan Draft</h3>
+                                        <span className={`draft-status ${planningDraftStatus}`}>{planningDraftStatus === 'saving' ? 'Saving…' : planningDraftStatus === 'saved' ? 'Saved' : 'Idle'}</span>
+                                    </div>
+                                    <textarea
+                                        value={planningDraft}
+                                        onChange={(e) => setPlanningDraft(e.target.value)}
+                                        placeholder="Write your semester intention, risk notes, or weekly action plan..."
+                                        rows={4}
+                                    />
+                                </div>
                             </div>
                         </section>
                     )}

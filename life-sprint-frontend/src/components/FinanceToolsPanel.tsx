@@ -342,7 +342,7 @@ export default function FinanceToolsPanel({ player }: FinanceToolsPanelProps) {
     }
 
     const refreshFromServer = async () => {
-        const fresh = await getPlayer(player.id)
+        const fresh = await getPlayer(player.id, { forceRefresh: true })
         setSnapshot({
             balance: Number(fresh.finance?.balance ?? 0),
             monthlyExpenses: Number(fresh.finance?.monthly_expenses ?? 0),
