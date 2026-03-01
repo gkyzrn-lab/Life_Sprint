@@ -1,10 +1,95 @@
 import React, { useState, useEffect } from 'react'
-import { TutorialStep, getTutorialSequence, completeTutorial, disableTutorials, createPlayer, getColleges, getMajors } from '../utils/api'
+import { TutorialStep, startTutorial, submitTutorialGame, skipTutorial, createPlayer, getColleges, getMajors } from '../utils/api'
 import './OnboardingModal.css'
 
 interface OnboardingModalProps {
     playerName: string
     onComplete: (player: any) => void
+}
+
+type RiasecDimension = 'R' | 'I' | 'A' | 'S' | 'E' | 'C'
+
+interface AssessmentQuestion {
+    id: string
+    text: string
+    dimension: RiasecDimension
+    reverse?: boolean
+}
+
+interface RiasecMeta {
+    code: RiasecDimension
+    name: string
+    vibe: string
+    emoji: string
+    color: string
+}
+
+const HOLLAND_RIASEC_META: RiasecMeta[] = [
+    { code: 'R', name: 'Realistic', vibe: 'Hands-on Builder', emoji: '🛠️', color: '#ef5350' },
+    { code: 'I', name: 'Investigative', vibe: 'Curious Problem-Solver', emoji: '🔬', color: '#42a5f5' },
+    { code: 'A', name: 'Artistic', vibe: 'Creative Storyteller', emoji: '🎨', color: '#ab47bc' },
+    { code: 'S', name: 'Social', vibe: 'People Helper', emoji: '🤝', color: '#26a69a' },
+    { code: 'E', name: 'Enterprising', vibe: 'Leader & Influencer', emoji: '🚀', color: '#ffa726' },
+    { code: 'C', name: 'Conventional', vibe: 'Planner & Organizer', emoji: '📋', color: '#7e57c2' },
+]
+
+// Optional major-fit assessment inspired by large career-psychology frameworks
+// (Holland RIASEC + personality/interest preference style prompts).
+const MAJOR_FIT_QUESTIONS: AssessmentQuestion[] = [
+    { id: 'q1', text: 'I enjoy solving complex logical or technical problems.', dimension: 'I' },
+    { id: 'q2', text: 'I like building, fixing, or working with tools and physical systems.', dimension: 'R' },
+    { id: 'q3', text: 'I often express myself through writing, art, design, or storytelling.', dimension: 'A' },
+    { id: 'q4', text: 'I feel energized when helping people with personal or social challenges.', dimension: 'S' },
+    { id: 'q5', text: 'I enjoy persuading others and taking initiative in groups.', dimension: 'E' },
+    { id: 'q6', text: 'I prefer structured tasks, details, and organized plans.', dimension: 'C' },
+    { id: 'q7', text: 'I am comfortable with advanced math or data-heavy work.', dimension: 'I' },
+    { id: 'q8', text: 'I prefer practical, hands-on tasks over abstract discussion.', dimension: 'R' },
+    { id: 'q9', text: 'I value creativity more than strict rules.', dimension: 'A' },
+    { id: 'q10', text: 'I enjoy mentoring, teaching, or coaching others.', dimension: 'S' },
+    { id: 'q11', text: 'I like competition and performance-based goals.', dimension: 'E' },
+    { id: 'q12', text: 'I rarely miss deadlines and keep systems orderly.', dimension: 'C' },
+    { id: 'q13', text: 'I like doing research before making decisions.', dimension: 'I' },
+    { id: 'q14', text: 'I enjoy designing or improving physical products/processes.', dimension: 'R' },
+    { id: 'q15', text: 'I am drawn to ideas, culture, and interpretation.', dimension: 'A' },
+    { id: 'q16', text: 'I pay attention to people’s emotions and group dynamics.', dimension: 'S' },
+    { id: 'q17', text: 'I like leading projects and setting direction.', dimension: 'E' },
+    { id: 'q18', text: 'I am comfortable with policy, procedures, and compliance.', dimension: 'C' },
+    { id: 'q19', text: 'I enjoy coding, analytics, or scientific exploration.', dimension: 'I' },
+    { id: 'q20', text: 'I prefer field/lab/shop activity over desk work.', dimension: 'R' },
+    { id: 'q21', text: 'I like open-ended assignments with no single right answer.', dimension: 'A' },
+    { id: 'q22', text: 'I want my future work to directly improve people’s lives.', dimension: 'S' },
+    { id: 'q23', text: 'I am motivated by revenue, growth, impact, and influence.', dimension: 'E' },
+    { id: 'q24', text: 'I enjoy accounting for details, records, and operational consistency.', dimension: 'C' },
+    { id: 'q25', text: 'I prefer stable routines over frequent change.', dimension: 'A', reverse: true },
+]
+
+const MAJOR_PROFILE_WEIGHTS: Record<string, Partial<Record<RiasecDimension, number>>> = {
+    cs: { I: 0.42, C: 0.20, R: 0.18, A: 0.10, E: 0.06, S: 0.04 },
+    engineering: { I: 0.34, R: 0.32, C: 0.16, E: 0.08, A: 0.06, S: 0.04 },
+    mechanical_engineering: { I: 0.30, R: 0.38, C: 0.16, E: 0.08, A: 0.04, S: 0.04 },
+    electrical_engineering: { I: 0.34, R: 0.30, C: 0.18, E: 0.08, A: 0.06, S: 0.04 },
+    industrial_engineering: { I: 0.28, C: 0.26, E: 0.18, R: 0.14, S: 0.08, A: 0.06 },
+    mathematics: { I: 0.50, C: 0.25, R: 0.10, A: 0.08, E: 0.04, S: 0.03 },
+    economics: { I: 0.30, E: 0.24, C: 0.20, S: 0.10, A: 0.08, R: 0.08 },
+    accounting: { C: 0.42, I: 0.24, E: 0.16, R: 0.08, S: 0.06, A: 0.04 },
+    finance: { E: 0.34, I: 0.24, C: 0.18, S: 0.10, A: 0.08, R: 0.06 },
+    ba: { E: 0.30, S: 0.22, C: 0.18, I: 0.14, A: 0.10, R: 0.06 },
+    psychology: { S: 0.38, I: 0.20, A: 0.16, E: 0.10, C: 0.10, R: 0.06 },
+    biology: { I: 0.34, R: 0.22, C: 0.16, S: 0.12, A: 0.08, E: 0.08 },
+    liberal_arts: { A: 0.34, S: 0.22, I: 0.18, E: 0.12, C: 0.08, R: 0.06 },
+    english: { A: 0.42, S: 0.20, I: 0.14, E: 0.10, C: 0.08, R: 0.06 },
+    history: { A: 0.30, I: 0.24, S: 0.18, E: 0.12, C: 0.10, R: 0.06 },
+    sociology: { S: 0.30, I: 0.20, A: 0.18, E: 0.14, C: 0.10, R: 0.08 },
+    politics: { E: 0.28, S: 0.24, I: 0.18, A: 0.12, C: 0.10, R: 0.08 },
+}
+
+const DEFAULT_MAJOR_WEIGHTS: Partial<Record<RiasecDimension, number>> = {
+    I: 0.2,
+    R: 0.14,
+    A: 0.14,
+    S: 0.16,
+    E: 0.18,
+    C: 0.18,
 }
 
 // College options with major-dependent tuition (fallback if API fails)
@@ -247,7 +332,7 @@ const HOUSING_CATEGORIES = [
         penaltyFee: 3000,
         options: [
             {
-                id: 'apt_cozy',
+                id: 'apt_cozy_budget',
                 name: 'Budget Apartment',
                 monthlyCost: 1100,
                 upfrontCost: 2200,
@@ -329,6 +414,12 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
     const [error, setError] = useState<string | null>(null)
     const [playerAge, setPlayerAge] = useState(18)
     const [showAgeScreen, setShowAgeScreen] = useState(true)
+    const [showAssessmentChoice, setShowAssessmentChoice] = useState(false)
+    const [showAssessment, setShowAssessment] = useState(false)
+    const [assessmentIndex, setAssessmentIndex] = useState(0)
+    const [assessmentAnswers, setAssessmentAnswers] = useState<number[]>([])
+    const [riasecProfile, setRiasecProfile] = useState<Record<RiasecDimension, number> | null>(null)
+    const [majorFitScores, setMajorFitScores] = useState<Record<string, number>>({})
     const [selectedCollege, setSelectedCollege] = useState('cuny_baruch')
     const [selectedMajor, setSelectedMajor] = useState('cs')
     const [colleges, setColleges] = useState<any[]>([])
@@ -346,6 +437,115 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
     const [suggestedBudget, setSuggestedBudget] = useState(5000)
     const [playerBudget, setPlayerBudget] = useState(5000)
     const [budgetWarning, setBudgetWarning] = useState('')
+
+    const inferMajorWeights = (majorId: string): Partial<Record<RiasecDimension, number>> => {
+        if (MAJOR_PROFILE_WEIGHTS[majorId]) return MAJOR_PROFILE_WEIGHTS[majorId]
+        const m = majorId.toLowerCase()
+        if (m.includes('engineering') || m.includes('robot') || m.includes('mechanical') || m.includes('electrical')) {
+            return { I: 0.32, R: 0.34, C: 0.16, E: 0.08, A: 0.06, S: 0.04 }
+        }
+        if (m.includes('cs') || m.includes('computer') || m.includes('data') || m.includes('math')) {
+            return { I: 0.42, C: 0.22, R: 0.14, A: 0.10, E: 0.08, S: 0.04 }
+        }
+        if (m.includes('business') || m.includes('finance') || m.includes('account') || m.includes('econ')) {
+            return { E: 0.30, C: 0.22, I: 0.20, S: 0.12, A: 0.08, R: 0.08 }
+        }
+        if (m.includes('psych') || m.includes('social') || m.includes('nursing') || m.includes('education')) {
+            return { S: 0.36, I: 0.18, A: 0.16, E: 0.12, C: 0.10, R: 0.08 }
+        }
+        if (m.includes('english') || m.includes('history') || m.includes('arts') || m.includes('liberal')) {
+            return { A: 0.34, S: 0.20, I: 0.18, E: 0.12, C: 0.10, R: 0.06 }
+        }
+        return DEFAULT_MAJOR_WEIGHTS
+    }
+
+    const computeRiasecProfile = (answers: number[]): Record<RiasecDimension, number> => {
+        const sums: Record<RiasecDimension, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+        const counts: Record<RiasecDimension, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+
+        MAJOR_FIT_QUESTIONS.forEach((q, idx) => {
+            const raw = answers[idx] ?? 3
+            const normalized = q.reverse ? (6 - raw) : raw
+            sums[q.dimension] += normalized
+            counts[q.dimension] += 1
+        })
+
+        const profile: Record<RiasecDimension, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+            ; (['R', 'I', 'A', 'S', 'E', 'C'] as RiasecDimension[]).forEach((d) => {
+                const avg = counts[d] > 0 ? sums[d] / counts[d] : 3
+                profile[d] = Math.round(((avg - 1) / 4) * 100)
+            })
+        return profile
+    }
+
+    const scoreMajorFit = (majorId: string, profile: Record<RiasecDimension, number>): number => {
+        const weights = inferMajorWeights(majorId)
+        let weightedTotal = 0
+        let weightSum = 0
+            ; (['R', 'I', 'A', 'S', 'E', 'C'] as RiasecDimension[]).forEach((d) => {
+                const w = weights[d] ?? 0
+                weightedTotal += profile[d] * w
+                weightSum += w
+            })
+        if (weightSum <= 0) return 50
+        return Math.round(weightedTotal / weightSum)
+    }
+
+    const getTopRiasecCode = (profile: Record<RiasecDimension, number>): string => {
+        const sorted = [...HOLLAND_RIASEC_META].sort((a, b) => profile[b.code] - profile[a.code])
+        return sorted.slice(0, 3).map((m) => m.code).join('')
+    }
+
+    const finalizeAssessment = (answers: number[]) => {
+        const profile = computeRiasecProfile(answers)
+        setRiasecProfile(profile)
+
+        const allMajors = majors.length > 0 ? majors : MAJORS
+        const scores: Record<string, number> = {}
+        allMajors.forEach((m: any) => {
+            scores[m.id] = scoreMajorFit(m.id, profile)
+        })
+        setMajorFitScores(scores)
+
+        const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0]
+        if (best?.[0]) {
+            setSelectedMajor(best[0])
+        }
+
+        setShowAssessment(false)
+        setShowAssessmentChoice(false)
+        setShowSelection(true)
+    }
+
+    const handleAssessmentAnswer = (value: number) => {
+        const next = [...assessmentAnswers]
+        next[assessmentIndex] = value
+        setAssessmentAnswers(next)
+
+        if (assessmentIndex < MAJOR_FIT_QUESTIONS.length - 1) {
+            setAssessmentIndex(assessmentIndex + 1)
+        } else {
+            finalizeAssessment(next)
+        }
+    }
+
+    useEffect(() => {
+        if (!showSelection) return
+
+        const collegeList = colleges.length > 0 ? colleges : COLLEGES
+        const selectedCollegeData = collegeList.find(c => c.id === selectedCollege)
+        const allMajors = majors.length > 0 ? majors : MAJORS
+        const filtered = allMajors.filter(m => {
+            if (!selectedCollegeData || !selectedCollegeData.offeredMajors) {
+                return true
+            }
+            return selectedCollegeData.offeredMajors.includes(m.id)
+        })
+
+        if (filtered.length > 0 && !filtered.find(m => m.id === selectedMajor)) {
+            setSelectedMajor(filtered[0].id)
+        }
+    }, [showSelection, colleges, majors, selectedCollege, selectedMajor])
 
     // Calculate scholarship based on GPA
     const getScholarshipPercentage = (gpa: number): number => {
@@ -379,7 +579,7 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                 const transformedColleges = Object.values(collegesData).map((college: any) => ({
                     id: college.id,
                     name: college.name,
-                    baseNote: college.notes || college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution',
+                    baseNote: college.notes || (college.type ? college.type.charAt(0).toUpperCase() + college.type.slice(1) + ' Institution' : 'College'),
                     offeredMajors: college.offered_majors || [],  // List of major IDs this college offers
                     benefits: college.benefits || [],
                     cons: college.cons || [],
@@ -387,7 +587,8 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                     networkingMultiplier: college.networking_multiplier || 1.0,
                     jobOpportunityBonus: college.job_opportunity_bonus || 0,
                     startingSalaryMultiplier: college.starting_salary_multiplier || 1.0,
-                    baseTuition: college.base_tuition_per_year || 0
+                    baseTuition: college.base_tuition_per_year || 0,
+                    tuitionByMajor: college.tuition_by_major || {}
                 }))
 
                 setColleges(transformedColleges)
@@ -417,7 +618,7 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
         fetchCatalogs()
     }, [])
 
-    // Handle starting the game (creates player and loads tutorials)
+    // Handle starting the game (creates player and starts tutorials)
     const handleStartGame = async () => {
         try {
             console.log('Starting game with:', { playerName, selectedCollege, selectedMajor, selectedHousingOption })
@@ -432,18 +633,19 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                 highSchoolGPA,
                 playerBudget,
                 playerAge,
-                selectedHousingOption || 'dorm'
+                selectedHousingOption || 'dorm_standard'
             )
             console.log('Player created:', player)
             setPlayerId(player.id)
             setShowSetup(false) // Clear setup flag
             setShowSelection(false) // Clear selection flag so we show tutorials next
 
-            // 2. Fetch tutorial sequence
-            console.log('Fetching tutorial sequence...')
-            const { sequence } = await getTutorialSequence()
-            console.log('Tutorials loaded:', sequence)
-            setTutorials(sequence)
+            // 2. Start tutorial quest chain
+            console.log('Starting tutorial quest...')
+            const tutorialResponse = await startTutorial(player.id)
+            console.log('Tutorial quest started:', tutorialResponse)
+            // Store tutorial data if needed for UI
+            setTutorials([]) // Will be populated from the quest response
             setLoading(false)
         } catch (err) {
             console.error('Error in handleStartGame:', err)
@@ -457,9 +659,9 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
 
         try {
             setLoading(true)
-            // Mark current tutorial as complete
-            const response = await completeTutorial(playerId, tutorials[currentStep].step_id)
-            setProgress(response.completion_percentage)
+            // In the new quest system, players answer questions in tutorial games
+            // This is a simplified version - full implementation would submit game answers
+            // via submitTutorialGame(playerId, gameId, answers)
 
             if (currentStep < tutorials.length - 1) {
                 setCurrentStep(currentStep + 1)
@@ -481,8 +683,8 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
 
         try {
             setLoading(true)
-            // Disable tutorials and proceed
-            await disableTutorials(playerId)
+            // Skip tutorial using new API
+            await skipTutorial(playerId)
             const playerResponse = await fetch(`http://localhost:8000/player/${playerId}`)
             const finalPlayer = await playerResponse.json()
             onComplete(finalPlayer)
@@ -546,11 +748,143 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                             <button
                                 onClick={() => {
                                     setShowAgeScreen(false)
-                                    setShowSelection(true)
+                                    setShowAssessmentChoice(true)
                                 }}
                                 className="btn btn-primary"
                             >
                                 Continue →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (showAssessmentChoice) {
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal setup-modal">
+                    <div className="setup-content">
+                        <h1>🧭 Holland RIASEC Major Fit (Optional)</h1>
+                        <p className="setup-intro">
+                            Want help picking a major? Take a 25-question self-assessment based on Holland’s career-interest theory (RIASEC).
+                        </p>
+                        <p className="budget-note">
+                            This is guidance, not a diagnosis. You can always change your major path later.
+                        </p>
+
+                        <div className="riasec-grid">
+                            {HOLLAND_RIASEC_META.map((meta) => (
+                                <div key={meta.code} className="riasec-card" style={{ borderColor: meta.color }}>
+                                    <div className="riasec-emoji">{meta.emoji}</div>
+                                    <div className="riasec-label">
+                                        <strong>{meta.code} • {meta.name}</strong>
+                                        <span>{meta.vibe}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="button-group">
+                            <button
+                                onClick={() => {
+                                    setShowAssessmentChoice(false)
+                                    setShowAssessment(true)
+                                    setAssessmentIndex(0)
+                                    setAssessmentAnswers([])
+                                }}
+                                className="btn btn-primary"
+                            >
+                                Start 25-Question Assessment
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowAssessmentChoice(false)
+                                    setShowSelection(true)
+                                }}
+                                className="btn btn-secondary"
+                            >
+                                Skip for Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (showAssessment) {
+        const q = MAJOR_FIT_QUESTIONS[assessmentIndex]
+        const selected = assessmentAnswers[assessmentIndex]
+        const currentMeta = HOLLAND_RIASEC_META.find((m) => m.code === q.dimension)
+        const liveProfile = computeRiasecProfile(assessmentAnswers)
+        const liveCode = getTopRiasecCode(liveProfile)
+        return (
+            <div className="onboarding-container">
+                <div className="onboarding-modal setup-modal">
+                    <div className="setup-content">
+                        <h1>🧠 Holland RIASEC Check-In</h1>
+                        <p className="progress-text">Question {assessmentIndex + 1} of {MAJOR_FIT_QUESTIONS.length}</p>
+                        <div className="progress-bar" style={{ marginBottom: 20 }}>
+                            <div className="progress-fill" style={{ width: `${((assessmentIndex + 1) / MAJOR_FIT_QUESTIONS.length) * 100}%` }}></div>
+                        </div>
+
+                        {currentMeta && (
+                            <div className="riasec-focus" style={{ borderLeftColor: currentMeta.color }}>
+                                <p>
+                                    <strong>{currentMeta.emoji} This prompt checks:</strong> {currentMeta.code} • {currentMeta.name} ({currentMeta.vibe})
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="riasec-live-card">
+                            <div className="riasec-live-header">
+                                <h3>Your live Holland code: <span>{liveCode}</span></h3>
+                                <p>Updates as you answer 👇</p>
+                            </div>
+                            <div className="riasec-bars">
+                                {HOLLAND_RIASEC_META.map((meta) => (
+                                    <div key={meta.code} className="riasec-bar-row">
+                                        <div className="riasec-bar-label">{meta.emoji} {meta.code}</div>
+                                        <div className="riasec-bar-track">
+                                            <div className="riasec-bar-fill" style={{ width: `${liveProfile[meta.code]}%`, background: meta.color }}></div>
+                                        </div>
+                                        <div className="riasec-bar-value">{liveProfile[meta.code]}%</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="setup-section">
+                            <h2 style={{ marginBottom: 18 }}>{q.text}</h2>
+                            <p className="option-hint" style={{ marginBottom: 12 }}>Rate from 1 (Strongly Disagree) to 5 (Strongly Agree)</p>
+                            <div className="button-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
+                                {[1, 2, 3, 4, 5].map((v) => (
+                                    <button
+                                        key={v}
+                                        className={`btn btn-option ${selected === v ? 'active' : ''}`}
+                                        onClick={() => handleAssessmentAnswer(v)}
+                                    >
+                                        {v}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="button-group">
+                            <button
+                                onClick={() => {
+                                    if (assessmentIndex > 0) {
+                                        setAssessmentIndex(assessmentIndex - 1)
+                                    } else {
+                                        setShowAssessment(false)
+                                        setShowAssessmentChoice(true)
+                                    }
+                                }}
+                                className="btn btn-secondary"
+                            >
+                                ← Back
                             </button>
                         </div>
                     </div>
@@ -573,14 +907,26 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                 }
                 return selectedCollegeData.offeredMajors.includes(m.id)
             })
-            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-
-        // Reset major selection if it's not offered by the selected college
-        if (majorList.length > 0 && !majorList.find(m => m.id === selectedMajor)) {
-            setSelectedMajor(majorList[0].id)
-        }
+            .sort((a, b) => {
+                const fitA = majorFitScores[a.id]
+                const fitB = majorFitScores[b.id]
+                if (typeof fitA === 'number' && typeof fitB === 'number' && fitA !== fitB) {
+                    return fitB - fitA
+                }
+                return (a.name || '').localeCompare(b.name || '')
+            })
 
         const selectedMajorData = majorList.find(m => m.id === selectedMajor)
+        const topRecommendations = Object.entries(majorFitScores)
+            .filter(([id]) => majorList.some((m) => m.id === id))
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([id, score]) => ({
+                id,
+                score,
+                name: majorList.find((m) => m.id === id)?.name || id,
+            }))
+        const riasecCode = riasecProfile ? getTopRiasecCode(riasecProfile) : null
 
         const calculateTuition = () => {
             if (!selectedCollegeData || !selectedMajorData) return 8000
@@ -613,13 +959,36 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                             </p>
                         </div>
 
+                        {topRecommendations.length > 0 && (
+                            <div style={{ background: '#f1f8e9', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', borderLeft: '4px solid #43a047' }}>
+                                <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#2e7d32', lineHeight: '1.5' }}>
+                                    🎯 <strong>Your assessment-based matches:</strong>
+                                </p>
+                                {riasecCode && (
+                                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#2e7d32' }}>
+                                        Holland code: <strong>{riasecCode}</strong>
+                                    </p>
+                                )}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {topRecommendations.map((rec, i) => (
+                                        <span key={rec.id} style={{ backgroundColor: '#e8f5e9', padding: '5px 10px', borderRadius: '14px', fontSize: '12px', color: '#2e7d32' }}>
+                                            #{i + 1} {rec.name} ({rec.score}%)
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="selection-grid">
                             {/* College Selection */}
                             <div className="selection-column">
                                 <h2>Select Your College</h2>
                                 <div className="cards-container">
                                     {collegeList.map((college) => {
-                                        const tuitionCost = college.tuitionByMajor[selectedMajor as keyof typeof college.tuitionByMajor] || 8000
+                                        const matrixTuition = college?.tuitionByMajor?.[selectedMajor]
+                                        const tuitionCost = typeof matrixTuition === 'number'
+                                            ? matrixTuition
+                                            : Math.round((college?.baseTuition || 8000) * (selectedMajorData?.tuitionMultiplier || 1.0))
                                         return (
                                             <div
                                                 key={college.id}
@@ -664,6 +1033,9 @@ export function OnboardingModal({ playerName, onComplete }: OnboardingModalProps
                                             onClick={() => setSelectedMajor(major.id)}
                                         >
                                             <h3>{major.name}</h3>
+                                            {typeof majorFitScores[major.id] === 'number' && (
+                                                <p className="cost-note">🎯 Fit Score: {majorFitScores[major.id]}%</p>
+                                            )}
                                             {major.typical_salaries && (
                                                 <p className="cost-note">💰 {major.typical_salaries}</p>
                                             )}

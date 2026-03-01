@@ -291,8 +291,8 @@ This makes **purchasing feel meaningful and contextual**.
 | [api/router_store.py](api/router_store.py) | New | 6 API endpoints |
 | [store/__init__.py](store/__init__.py) | New | Module initialization |
 | [main.py](main.py) | Modified | Register store router |
-| [store_demo.py](store_demo.py) | New | 7 comprehensive demos |
-| [STORE_SYSTEM_IMPLEMENTATION.md](STORE_SYSTEM_IMPLEMENTATION.md) | New | Implementation guide |
+| [store_demo.py](../../../store_demo.py) | New | 7 comprehensive demos |
+| [STORE_SYSTEM_IMPLEMENTATION.md](../store/STORE_SYSTEM_IMPLEMENTATION.md) | New | Implementation guide |
 
 ## Next Steps (Optional Enhancements)
 

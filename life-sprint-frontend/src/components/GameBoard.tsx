@@ -1,7 +1,23 @@
-import React, { useState, useEffect } from 'react'
-import { Player, attendClass } from '../utils/api'
-import { getSemesterInfo, getCurrentPhase, formatSemesterDisplay } from '../utils/semesterUtils'
-import { StorePanel } from './StorePanel'
+import { useState, useEffect, useRef } from 'react'
+import {
+    Player,
+    attendClass,
+    getMiniGamesForCourse,
+    getMiniGameDetails,
+    getLessonGame,
+    markMiniGameSeen,
+    submitLessonGame,
+    submitMiniGame,
+    MiniGameSummary,
+    MiniGameDetails,
+    LessonGameDetails,
+    LessonGameQuestion,
+    MiniGameSubmissionResult,
+    GameRecommendation,
+} from '../utils/api'
+import { getSemesterInfo, getCurrentPhase } from '../utils/semesterUtils'
+import LifeReadinessPanel from './LifeReadinessPanel'
+import VisualExperiencePanel from './VisualExperiencePanel'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -25,8 +41,15 @@ interface ClassContent {
     learning_outcomes: string[]
 }
 
+interface LessonConceptGameResult {
+    scorePercent: number
+    passed: boolean
+    correctCount: number
+    totalQuestions: number
+}
+
 export function GameBoard({ player, onLogout }: GameBoardProps) {
-    const [activeTab, setActiveTab] = useState<'stats' | 'finance' | 'planning' | 'academics' | 'store'>('stats')
+    const [activeTab, setActiveTab] = useState<'stats' | 'finance' | 'planning' | 'academics' | 'visual' | 'analytics' | 'store'>('stats')
     const [classContent, setClassContent] = useState<ClassContent | null>(null)
     const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
@@ -36,7 +59,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
     // Course info modal state
     const [courseInfoModal, setCourseInfoModal] = useState<any | null>(null)
-    const [courseInfoLoading, setCourseInfoLoading] = useState(false)
+    const [, setCourseInfoLoading] = useState(false)
 
     // Semester exam state
     const [showSemesterExam, setShowSemesterExam] = useState(false)
@@ -53,6 +76,296 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
     const [userAnswers, setUserAnswers] = useState<Record<number, string>>({})
     const [quizSubmitted, setQuizSubmitted] = useState(false)
     const [quizScore, setQuizScore] = useState<number | null>(null)
+
+    // Mini-game state
+    const [courseMiniGames, setCourseMiniGames] = useState<MiniGameSummary[]>([])
+    const [miniGamesLoading, setMiniGamesLoading] = useState(false)
+    const [activeMiniGame, setActiveMiniGame] = useState<MiniGameDetails | null>(null)
+    const [miniGameQuestionIndex, setMiniGameQuestionIndex] = useState(0)
+    const [miniGameAnswers, setMiniGameAnswers] = useState<Record<number, number>>({})
+    const [miniGameSubmitted, setMiniGameSubmitted] = useState(false)
+    const [miniGameResult, setMiniGameResult] = useState<MiniGameSubmissionResult | null>(null)
+    const [miniGameStartTime, setMiniGameStartTime] = useState<number | null>(null)
+    const [activeLesson, setActiveLesson] = useState<any | null>(null)
+    const [activeLessonGame, setActiveLessonGame] = useState<LessonGameDetails | null>(null)
+    const [lessonGameLoading, setLessonGameLoading] = useState(false)
+    const [lessonGameError, setLessonGameError] = useState<string | null>(null)
+    const [lessonGameQuestionIndex, setLessonGameQuestionIndex] = useState(0)
+    const [lessonGameAnswers, setLessonGameAnswers] = useState<Record<number, number>>({})
+    const [lessonGameSubmitted, setLessonGameSubmitted] = useState(false)
+    const [lessonGameResult, setLessonGameResult] = useState<LessonConceptGameResult | null>(null)
+    const [pendingRecommendedGameId, setPendingRecommendedGameId] = useState<string | null>(null)
+    const [lifeMomentNotice, setLifeMomentNotice] = useState<string | null>(null)
+    const [pendingLifeMoment, setPendingLifeMoment] = useState<{
+        headline: string
+        scenario: string
+        stakes: string
+        game: MiniGameDetails
+    } | null>(null)
+    const randomMiniGameTimerRef = useRef<number | null>(null)
+    const recommendedLaunchTimerRef = useRef<number | null>(null)
+    const randomMomentsByCourseRef = useRef<Record<string, number>>({})
+    const seenMiniGamesByCourseRef = useRef<Record<string, Set<string>>>({})
+    const randomTriggerAttemptsByCourseRef = useRef<Record<string, number>>({})
+    const miniGameOutcomesByCourseRef = useRef<Record<string, { passed: number; failed: number }>>({})
+    const lastRandomTriggerAtRef = useRef<number>(0)
+    const classSessionStartedAtRef = useRef<number>(0)
+    const lastMiniGameClosedAtRef = useRef<number>(0)
+    const MAX_RANDOM_MOMENTS_PER_COURSE = 2
+
+    const clampNumber = (value: number, min: number, max: number): number => {
+        return Math.max(min, Math.min(max, value))
+    }
+
+    const generateFallbackLessonQuestions = (lesson: any): LessonGameQuestion[] => {
+        const topic = lesson?.topic || 'this concept'
+        const title = lesson?.title || 'the lesson'
+        const content = (lesson?.content || '').toString()
+        const summary = content.length > 90 ? `${content.slice(0, 90)}...` : content
+
+        return [
+            {
+                id: `${lesson?.id || 'lesson'}-q1`,
+                prompt: `What is the main focus of "${title}"?`,
+                options: [
+                    `Understanding ${topic} through examples and practical reasoning`,
+                    'Memorizing facts without application',
+                    'Skipping fundamentals and jumping to advanced topics',
+                    'Avoiding feedback and concept checks',
+                ],
+                correct_option_index: 0,
+                explanation: `This lesson emphasizes applying ${topic} clearly, not just memorizing terms.`,
+                learning_point: `Core concept clarity in ${topic}`,
+            },
+            {
+                id: `${lesson?.id || 'lesson'}-q2`,
+                prompt: `Which approach best helps you retain this lesson concept?`,
+                options: [
+                    'Connect the concept to a real scenario and explain it in your own words',
+                    'Read once and move on quickly',
+                    'Ignore examples and only look at headings',
+                    'Wait until exam week to review',
+                ],
+                correct_option_index: 0,
+                explanation: 'Active recall + real-world connection improves learning and transfer.',
+                learning_point: 'Active learning beats passive exposure.',
+            },
+            {
+                id: `${lesson?.id || 'lesson'}-q3`,
+                prompt: `Based on this lesson summary: "${summary || topic}", what should you do next?`,
+                options: [
+                    `Practice one short application task related to ${topic}`,
+                    'Skip practice and rely on intuition',
+                    'Avoid reviewing mistakes',
+                    'Only focus on unrelated topics',
+                ],
+                correct_option_index: 0,
+                explanation: 'Immediate small practice cements concept understanding.',
+                learning_point: 'Short practice loops build long-term mastery.',
+            },
+        ]
+    }
+
+    const normalizeLessonGame = (lesson: any, payload: LessonGameDetails | null): LessonGameDetails => {
+        const contentQuestions = Array.isArray(payload?.content?.questions)
+            ? payload?.content?.questions
+            : []
+
+        const normalizedQuestions: LessonGameQuestion[] = contentQuestions
+            .filter((q: any) => q && Array.isArray(q.options) && q.options.length > 1)
+            .map((q: any, idx: number) => ({
+                id: q.id || `${lesson?.id || 'lesson'}-api-q${idx + 1}`,
+                prompt: q.prompt || q.question || `Concept Check ${idx + 1}`,
+                options: q.options,
+                correct_option_index: Number.isInteger(q.correct_option_index) ? q.correct_option_index : 0,
+                explanation: q.explanation || 'Review the concept and try applying it to a practical case.',
+                learning_point: q.learning_point || 'Concept reinforcement',
+            }))
+
+        const questions = normalizedQuestions.length >= 2
+            ? normalizedQuestions
+            : generateFallbackLessonQuestions(lesson)
+
+        return {
+            game_id: payload?.game_id || `lesson_${lesson?.id || 'concept'}_challenge`,
+            lesson_id: lesson?.id || payload?.lesson_id || 'lesson',
+            title: payload?.title || `Concept Challenge: ${lesson?.title || 'Lesson'}`,
+            game_type: payload?.game_type || 'concept_check',
+            description: payload?.description || `Interactive checks to help you understand ${lesson?.topic || 'the lesson'} better.`,
+            objectives: payload?.objectives || [
+                `Understand the core idea of ${lesson?.topic || 'the lesson'}`,
+                'Apply the concept in realistic scenarios',
+                'Build confidence before moving to quizzes',
+            ],
+            difficulty: payload?.difficulty || 'beginner',
+            estimated_duration_minutes: payload?.estimated_duration_minutes || 4,
+            content: payload?.content,
+            questions,
+        }
+    }
+
+    const getSessionStage = (courseId: string): 'early' | 'mid' | 'finals' => {
+        const startedAt = classSessionStartedAtRef.current || Date.now()
+        const elapsedMs = Date.now() - startedAt
+        const momentsSeen = randomMomentsByCourseRef.current[courseId] || 0
+
+        if (elapsedMs < 90_000 && momentsSeen === 0) return 'early'
+        if (elapsedMs < 5 * 60_000) return 'mid'
+        return 'finals'
+    }
+
+    const getPacingConfig = (stage: 'early' | 'mid' | 'finals') => {
+        const phase = getCurrentPhase(player.semester).phase
+
+        const byStage = {
+            early: { maxMoments: 1, cooldownMs: 55_000, triggerMultiplier: 0.85, minDelayMs: 10_000, maxDelayMs: 24_000 },
+            mid: { maxMoments: 2, cooldownMs: 45_000, triggerMultiplier: 1.0, minDelayMs: 9_000, maxDelayMs: 21_000 },
+            finals: { maxMoments: 3, cooldownMs: 35_000, triggerMultiplier: 1.2, minDelayMs: 7_000, maxDelayMs: 16_000 },
+        }[stage]
+
+        if (phase === 'winter-break' || phase === 'summer-break') {
+            return { ...byStage, maxMoments: Math.max(0, byStage.maxMoments - 2), triggerMultiplier: byStage.triggerMultiplier * 0.5 }
+        }
+
+        if (phase === 'internship-period') {
+            return { ...byStage, maxMoments: Math.max(1, byStage.maxMoments - 1), triggerMultiplier: byStage.triggerMultiplier * 0.8 }
+        }
+
+        return byStage
+    }
+
+    const computeWeightedTriggerChance = (courseId: string, cooldownMs: number, triggerMultiplier: number): number => {
+        const stress = Number(player.stats?.stress ?? 0)
+        const burnout = Number(player.stats?.burnout ?? 0)
+        const gpa = Number(player.stats?.gpa ?? 0)
+
+        const courseInfo = currentCourses.find(c => c.id === courseId)
+        const weeklyHours = Number(courseInfo?.weekly_hours ?? 0)
+
+        const outcomes = miniGameOutcomesByCourseRef.current[courseId] || { passed: 0, failed: 0 }
+        const totalOutcomes = outcomes.passed + outcomes.failed
+        const failRate = totalOutcomes > 0 ? outcomes.failed / totalOutcomes : 0
+
+        const attempts = randomTriggerAttemptsByCourseRef.current[courseId] || 0
+        const phase = getCurrentPhase(player.semester).phase
+
+        let chance = 0.28
+        chance += (stress / 100) * 0.22
+        chance += (burnout / 100) * 0.14
+        chance += clampNumber((3.0 - gpa) / 3.0, 0, 1) * 0.12
+        chance += clampNumber(weeklyHours / 16, 0, 1) * 0.12
+        chance += failRate * 0.15
+        chance += clampNumber(attempts / 4, 0, 1) * 0.08
+
+        if (phase === 'internship-period') {
+            chance += 0.08
+        } else if (phase === 'winter-break' || phase === 'summer-break') {
+            chance -= 0.12
+        }
+
+        const sinceRandomTriggerMs = Date.now() - lastRandomTriggerAtRef.current
+        const sinceMiniGameCloseMs = Date.now() - lastMiniGameClosedAtRef.current
+        if (sinceRandomTriggerMs < cooldownMs || sinceMiniGameCloseMs < cooldownMs) {
+            chance -= 0.2
+        }
+
+        chance *= triggerMultiplier
+
+        return clampNumber(chance, 0.08, 0.9)
+    }
+
+    const getGameChallengeScore = (game: MiniGameSummary): number => {
+        const passComponent = (game.min_passing_score || 70) / 100
+        const lengthComponent = Math.min(1.0, (game.question_count || 1) / 10)
+        const difficultyComponent = Math.min(1.0, (game.average_question_difficulty || 2.5) / 5)
+        return passComponent * 0.35 + lengthComponent * 0.25 + difficultyComponent * 0.4
+    }
+
+    const getAdaptiveMode = (courseId: string): 'recovery' | 'balanced' | 'challenge' => {
+        const outcomes = miniGameOutcomesByCourseRef.current[courseId] || { passed: 0, failed: 0 }
+        const totalOutcomes = outcomes.passed + outcomes.failed
+        const failRate = totalOutcomes > 0 ? outcomes.failed / totalOutcomes : 0
+
+        const completedGames = courseMiniGames.filter(g => g.completed)
+        const avgBestScore = completedGames.length > 0
+            ? completedGames.reduce((sum, g) => sum + Number(g.best_score_percent || 0), 0) / completedGames.length
+            : 0
+
+        if (failRate >= 0.45 || (completedGames.length > 0 && avgBestScore < 70)) {
+            return 'recovery'
+        }
+        if ((outcomes.passed >= outcomes.failed + 2) || avgBestScore >= 88) {
+            return 'challenge'
+        }
+        return 'balanced'
+    }
+
+    const buildLifeMomentNarration = (courseId: string, game: MiniGameSummary): { headline: string; scenario: string; stakes: string } => {
+        const cid = courseId.toLowerCase()
+
+        if (cid.startsWith('ba') || cid.startsWith('econ')) {
+            return {
+                headline: `Boardroom ping: ${game.title}`,
+                scenario: `A stakeholder asks for an immediate decision related to ${game.topic.toLowerCase()}. You have one shot to respond clearly and confidently.`,
+                stakes: 'Good call: stronger reputation and opportunity momentum. Bad call: trust drops and pressure rises.',
+            }
+        }
+
+        if (cid.startsWith('cs')) {
+            return {
+                headline: `Production alert: ${game.title}`,
+                scenario: `A live system issue just hit your queue. The challenge maps to ${game.topic.toLowerCase()} and your team expects fast, correct reasoning.`,
+                stakes: 'Strong response: technical credibility grows. Weak response: interview readiness and confidence take a hit.',
+            }
+        }
+
+        if (cid.startsWith('eng') || cid.startsWith('phys')) {
+            return {
+                headline: `Design review emergency: ${game.title}`,
+                scenario: `A real-world constraint changed minutes before review. You must apply ${game.topic.toLowerCase()} under time pressure.`,
+                stakes: 'Solid solution: project trust and leadership rise. Mistakes: safety/risk concerns and extra scrutiny.',
+            }
+        }
+
+        return {
+            headline: `Life moment triggered: ${game.title}`,
+            scenario: `A course-related situation appeared unexpectedly. Apply what you learned about ${game.topic.toLowerCase()}.`,
+            stakes: 'Your choice affects stress, confidence, and future opportunities.',
+        }
+    }
+
+    const pickWeightedMiniGame = (courseId: string, pool: MiniGameSummary[]): MiniGameSummary | null => {
+        if (pool.length === 0) return null
+
+        const adaptiveMode = getAdaptiveMode(courseId)
+
+        const weightedPool = pool.map(game => {
+            const challengeScore = getGameChallengeScore(game)
+            let weight = 1
+
+            if (adaptiveMode === 'recovery') {
+                weight += Math.max(0.3, 1.7 - challengeScore)
+            } else if (adaptiveMode === 'challenge') {
+                weight += challengeScore * 1.8
+            } else {
+                weight += 0.6
+            }
+
+            return { game, weight: Math.max(0.1, weight) }
+        })
+
+        const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0)
+        let pick = Math.random() * totalWeight
+
+        for (const item of weightedPool) {
+            pick -= item.weight
+            if (pick <= 0) {
+                return item.game
+            }
+        }
+
+        return weightedPool[weightedPool.length - 1].game
+    }
 
     useEffect(() => {
         const loadSemesterCourses = async () => {
@@ -75,6 +388,24 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
             loadSemesterCourses()
         }
     }, [player?.id, player?.semester])
+
+    useEffect(() => {
+        if (!pendingRecommendedGameId || activeTab !== 'academics' || !classContent) return
+
+        const card = document.querySelector(`[data-game-id="${pendingRecommendedGameId}"]`) as HTMLElement | null
+        if (!card) return
+
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, [pendingRecommendedGameId, activeTab, classContent, courseMiniGames])
+
+    useEffect(() => {
+        return () => {
+            if (recommendedLaunchTimerRef.current) {
+                window.clearTimeout(recommendedLaunchTimerRef.current)
+                recommendedLaunchTimerRef.current = null
+            }
+        }
+    }, [])
 
     const handleCourseInfo = async (courseId: string) => {
         try {
@@ -196,15 +527,351 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
         try {
             setLoading(true)
             setError(null)
-            const content = await attendClass(courseId)
+            classSessionStartedAtRef.current = Date.now()
+            randomMomentsByCourseRef.current[courseId] = 0
+            randomTriggerAttemptsByCourseRef.current[courseId] = 0
+
+            const [content, gamesResponse] = await Promise.all([
+                attendClass(courseId),
+                getMiniGamesForCourse(courseId, player.id),
+            ])
             setClassContent(content)
             setSelectedCourse(courseId)
+            setCourseMiniGames(gamesResponse.games || [])
+
+            const persistedSeen = new Set<string>(
+                (gamesResponse.games || [])
+                    .filter(g => g.seen || g.completed)
+                    .map(g => g.id)
+            )
+            seenMiniGamesByCourseRef.current[courseId] = persistedSeen
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to attend class')
+            setCourseMiniGames([])
         } finally {
             setLoading(false)
         }
     }
+
+    const handleStartMiniGame = async (gameId: string) => {
+        try {
+            setMiniGamesLoading(true)
+            setError(null)
+
+            const game = await getMiniGameDetails(gameId)
+
+            try {
+                await markMiniGameSeen(player.id, game.id, game.course_id)
+            } catch {
+                // non-blocking: gameplay should continue even if seen tracking fails
+            }
+
+            if (!seenMiniGamesByCourseRef.current[game.course_id]) {
+                seenMiniGamesByCourseRef.current[game.course_id] = new Set<string>()
+            }
+            seenMiniGamesByCourseRef.current[game.course_id].add(game.id)
+            setCourseMiniGames(prev => prev.map(g => (g.id === game.id ? { ...g, seen: true } : g)))
+
+            setActiveMiniGame(game)
+            setMiniGameQuestionIndex(0)
+            setMiniGameAnswers({})
+            setMiniGameSubmitted(false)
+            setMiniGameResult(null)
+            setMiniGameStartTime(Date.now())
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to start mini-game')
+        } finally {
+            setMiniGamesLoading(false)
+        }
+    }
+
+    const handleMiniGameAnswerSelect = (optionIndex: number) => {
+        setMiniGameAnswers(prev => ({
+            ...prev,
+            [miniGameQuestionIndex]: optionIndex,
+        }))
+    }
+
+    const handleMiniGameNextQuestion = () => {
+        if (!activeMiniGame) return
+        if (miniGameQuestionIndex < activeMiniGame.questions.length - 1) {
+            setMiniGameQuestionIndex(miniGameQuestionIndex + 1)
+        }
+    }
+
+    const handleMiniGamePreviousQuestion = () => {
+        if (miniGameQuestionIndex > 0) {
+            setMiniGameQuestionIndex(miniGameQuestionIndex - 1)
+        }
+    }
+
+    const handleSubmitMiniGame = async () => {
+        if (!activeMiniGame) return
+
+        try {
+            setMiniGamesLoading(true)
+
+            const answers = activeMiniGame.questions.map((q, idx) => ({
+                question_id: q.id,
+                selected_option_index: miniGameAnswers[idx],
+            }))
+
+            const elapsedMs = miniGameStartTime ? Date.now() - miniGameStartTime : 0
+            const timeSpentMinutes = Math.max(1, Math.round(elapsedMs / 60000))
+
+            const result = await submitMiniGame(player.id, {
+                game_id: activeMiniGame.id,
+                course_id: activeMiniGame.course_id,
+                answers,
+                time_spent_minutes: timeSpentMinutes,
+            })
+
+            if (!miniGameOutcomesByCourseRef.current[activeMiniGame.course_id]) {
+                miniGameOutcomesByCourseRef.current[activeMiniGame.course_id] = { passed: 0, failed: 0 }
+            }
+            if (result.passed) {
+                miniGameOutcomesByCourseRef.current[activeMiniGame.course_id].passed += 1
+            } else {
+                miniGameOutcomesByCourseRef.current[activeMiniGame.course_id].failed += 1
+            }
+
+            setCourseMiniGames(prev => prev.map(g => (
+                g.id === activeMiniGame.id
+                    ? {
+                        ...g,
+                        seen: true,
+                        completed: result.passed ? true : (g.completed || false),
+                        best_score_percent: Math.max(g.best_score_percent ?? 0, result.score_percent),
+                    }
+                    : g
+            )))
+
+            setMiniGameResult(result)
+            setMiniGameSubmitted(true)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to submit mini-game')
+        } finally {
+            setMiniGamesLoading(false)
+        }
+    }
+
+    const handleCloseMiniGame = () => {
+        lastMiniGameClosedAtRef.current = Date.now()
+        setActiveMiniGame(null)
+        setMiniGameQuestionIndex(0)
+        setMiniGameAnswers({})
+        setMiniGameSubmitted(false)
+        setMiniGameResult(null)
+        setMiniGameStartTime(null)
+    }
+
+    const handleOpenLessonGame = async (lesson: any) => {
+        try {
+            setLessonGameLoading(true)
+            setLessonGameError(null)
+            setActiveLesson(lesson)
+            setLessonGameQuestionIndex(0)
+            setLessonGameAnswers({})
+            setLessonGameSubmitted(false)
+            setLessonGameResult(null)
+
+            let payload: LessonGameDetails | null = null
+            try {
+                payload = await getLessonGame(lesson.id)
+            } catch {
+                payload = null
+            }
+
+            setActiveLessonGame(normalizeLessonGame(lesson, payload))
+        } catch (err) {
+            setLessonGameError(err instanceof Error ? err.message : 'Failed to open lesson mini-game')
+        } finally {
+            setLessonGameLoading(false)
+        }
+    }
+
+    const handleCloseLessonGame = () => {
+        setActiveLesson(null)
+        setActiveLessonGame(null)
+        setLessonGameError(null)
+        setLessonGameQuestionIndex(0)
+        setLessonGameAnswers({})
+        setLessonGameSubmitted(false)
+        setLessonGameResult(null)
+    }
+
+    const handleLessonAnswerSelect = (optionIndex: number) => {
+        setLessonGameAnswers(prev => ({
+            ...prev,
+            [lessonGameQuestionIndex]: optionIndex,
+        }))
+    }
+
+    const handleLessonNextQuestion = () => {
+        if (!activeLessonGame?.questions) return
+        if (lessonGameQuestionIndex < activeLessonGame.questions.length - 1) {
+            setLessonGameQuestionIndex(lessonGameQuestionIndex + 1)
+        }
+    }
+
+    const handleLessonPreviousQuestion = () => {
+        if (lessonGameQuestionIndex > 0) {
+            setLessonGameQuestionIndex(lessonGameQuestionIndex - 1)
+        }
+    }
+
+    const handleSubmitLessonConceptGame = async () => {
+        if (!activeLessonGame?.questions || !activeLesson) return
+
+        const total = activeLessonGame.questions.length
+        let correct = 0
+        activeLessonGame.questions.forEach((q, idx) => {
+            if (lessonGameAnswers[idx] === q.correct_option_index) {
+                correct += 1
+            }
+        })
+
+        const scorePercent = Math.round((correct / total) * 100)
+        const passed = scorePercent >= 70
+
+        setLessonGameResult({
+            scorePercent,
+            passed,
+            correctCount: correct,
+            totalQuestions: total,
+        })
+        setLessonGameSubmitted(true)
+
+        try {
+            await submitLessonGame(activeLesson.id, { score: correct, max_score: total })
+        } catch {
+            // non-blocking: local learning flow should continue
+        }
+    }
+
+    const handlePlayRecommendedGame = async (rec: GameRecommendation) => {
+        const phase = getCurrentPhase(player.semester)
+        if (!phase.canAttendClasses) {
+            throw new Error('Classes are not in session right now. Recommended games open during class periods.')
+        }
+
+        setActiveTab('academics')
+        setPendingRecommendedGameId(rec.game_id)
+
+        if (!classContent || selectedCourse !== rec.course_id) {
+            await handleAttendClass(rec.course_id)
+        }
+
+        await new Promise(resolve => window.setTimeout(resolve, 260))
+        await handleStartMiniGame(rec.game_id)
+
+        if (recommendedLaunchTimerRef.current) {
+            window.clearTimeout(recommendedLaunchTimerRef.current)
+        }
+        recommendedLaunchTimerRef.current = window.setTimeout(() => {
+            setPendingRecommendedGameId(null)
+            recommendedLaunchTimerRef.current = null
+        }, 2200)
+    }
+
+    const handleStartPendingLifeMoment = () => {
+        if (!pendingLifeMoment) return
+        setActiveMiniGame(pendingLifeMoment.game)
+        setMiniGameQuestionIndex(0)
+        setMiniGameAnswers({})
+        setMiniGameSubmitted(false)
+        setMiniGameResult(null)
+        setMiniGameStartTime(Date.now())
+        setPendingLifeMoment(null)
+    }
+
+    useEffect(() => {
+        if (randomMiniGameTimerRef.current !== null) {
+            window.clearTimeout(randomMiniGameTimerRef.current)
+            randomMiniGameTimerRef.current = null
+        }
+
+        if (!classContent || !selectedCourse || courseMiniGames.length === 0) {
+            return
+        }
+
+        const sessionStage = getSessionStage(selectedCourse)
+        const pacing = getPacingConfig(sessionStage)
+
+        const randomCount = randomMomentsByCourseRef.current[selectedCourse] || 0
+        const maxAllowedMoments = Math.min(MAX_RANDOM_MOMENTS_PER_COURSE, pacing.maxMoments)
+        if (randomCount >= maxAllowedMoments) {
+            return
+        }
+
+        if (activeMiniGame || activeQuiz || showSemesterExam || pendingLifeMoment) {
+            return
+        }
+
+        if (!seenMiniGamesByCourseRef.current[selectedCourse]) {
+            seenMiniGamesByCourseRef.current[selectedCourse] = new Set<string>()
+        }
+
+        const unseenGames = courseMiniGames.filter(g => !seenMiniGamesByCourseRef.current[selectedCourse].has(g.id))
+        if (unseenGames.length === 0) {
+            return
+        }
+
+        const weightedChance = computeWeightedTriggerChance(selectedCourse, pacing.cooldownMs, pacing.triggerMultiplier)
+        const pressureFactor = clampNumber((Number(player.stats?.stress ?? 0) + Number(player.stats?.burnout ?? 0)) / 200, 0, 1)
+        const range = Math.max(1, pacing.maxDelayMs - pacing.minDelayMs)
+        const pacedDelay = pacing.minDelayMs + Math.floor(Math.random() * range)
+        const delayMs = Math.max(5000, pacedDelay - Math.floor(5000 * pressureFactor))
+
+        randomMiniGameTimerRef.current = window.setTimeout(async () => {
+            try {
+                randomTriggerAttemptsByCourseRef.current[selectedCourse] = (randomTriggerAttemptsByCourseRef.current[selectedCourse] || 0) + 1
+
+                if (Math.random() > weightedChance) {
+                    setLifeMomentNotice(`🧭 ${selectedCourse.toUpperCase()} stayed stable this time (phase ${sessionStage}, trigger chance ${(weightedChance * 100).toFixed(0)}%).`)
+                    return
+                }
+
+                const pool = courseMiniGames.filter(g => !seenMiniGamesByCourseRef.current[selectedCourse].has(g.id))
+                if (pool.length === 0) {
+                    return
+                }
+
+                const randomGame = pickWeightedMiniGame(selectedCourse, pool)
+
+                if (!randomGame) {
+                    return
+                }
+
+                seenMiniGamesByCourseRef.current[selectedCourse].add(randomGame.id)
+                randomMomentsByCourseRef.current[selectedCourse] = (randomMomentsByCourseRef.current[selectedCourse] || 0) + 1
+                lastRandomTriggerAtRef.current = Date.now()
+
+                const momentsLeft = Math.max(0, maxAllowedMoments - randomMomentsByCourseRef.current[selectedCourse])
+                setLifeMomentNotice(`⚡ ${sessionStage.toUpperCase()} phase moment in ${selectedCourse.toUpperCase()}: ${randomGame.title}${momentsLeft > 0 ? ` • ${momentsLeft} event(s) left this phase` : ''} • trigger ${(weightedChance * 100).toFixed(0)}%`)
+                setMiniGamesLoading(true)
+
+                const game = await getMiniGameDetails(randomGame.id)
+                const narration = buildLifeMomentNarration(selectedCourse, randomGame)
+                setPendingLifeMoment({
+                    ...narration,
+                    game,
+                })
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to launch random mini-game')
+            } finally {
+                setMiniGamesLoading(false)
+                randomMiniGameTimerRef.current = null
+            }
+        }, delayMs)
+
+        return () => {
+            if (randomMiniGameTimerRef.current !== null) {
+                window.clearTimeout(randomMiniGameTimerRef.current)
+                randomMiniGameTimerRef.current = null
+            }
+        }
+    }, [classContent, selectedCourse, courseMiniGames, activeMiniGame, activeQuiz, showSemesterExam, pendingLifeMoment])
 
     const handleStartQuiz = (quiz: any) => {
         setActiveQuiz(quiz)
@@ -272,6 +939,19 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
     const semesterInfo = getSemesterInfo(player.semester)
     const phaseInfo = getCurrentPhase(player.semester)
+    const adaptiveMode = selectedCourse ? getAdaptiveMode(selectedCourse) : 'balanced'
+    const adaptiveModeLabel = adaptiveMode === 'recovery'
+        ? 'Recovery Mode: easier moments prioritized'
+        : adaptiveMode === 'challenge'
+            ? 'Challenge Mode: harder moments prioritized'
+            : 'Balanced Mode: mixed difficulty'
+
+    const sortedMiniGames = [...courseMiniGames].sort((a, b) => {
+        const target = adaptiveMode === 'recovery' ? 0.35 : adaptiveMode === 'challenge' ? 0.8 : 0.55
+        const da = Math.abs(getGameChallengeScore(a) - target)
+        const db = Math.abs(getGameChallengeScore(b) - target)
+        return da - db
+    })
 
     return (
         <div className="game-container">
@@ -315,6 +995,18 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                         onClick={() => setActiveTab('academics')}
                     >
                         🎓 Academics
+                    </button>
+                    <button
+                        className={`nav-btn ${activeTab === 'visual' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('visual')}
+                    >
+                        ✨ Visual
+                    </button>
+                    <button
+                        className={`nav-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('analytics')}
+                    >
+                        📊 Analytics
                     </button>
                     <button
                         className={`nav-btn ${activeTab === 'store' ? 'active' : ''}`}
@@ -502,6 +1194,8 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                                     onClick={() => {
                                                         setClassContent(null)
                                                         setSelectedCourse(null)
+                                                        setCourseMiniGames([])
+                                                        setLifeMomentNotice(null)
                                                     }}
                                                 >
                                                     ← Back to Courses
@@ -510,6 +1204,13 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                             </div>
 
                                             <div className="class-sections">
+                                                {lifeMomentNotice && (
+                                                    <div className="phase-notice" style={{ marginBottom: '12px' }}>
+                                                        <p>{lifeMomentNotice}</p>
+                                                        <p className="notice-sub">Life Sprint triggers course-related challenges at random moments, just like real life.</p>
+                                                    </div>
+                                                )}
+
                                                 {/* Topics */}
                                                 <section className="class-section">
                                                     <h4>📚 Topics Covered</h4>
@@ -542,6 +1243,13 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                                                 </div>
                                                                 <p className="lesson-description">{lesson.content}</p>
                                                                 <p className="lesson-topic">Topic: {lesson.topic}</p>
+                                                                <button
+                                                                    className="btn-lesson-game"
+                                                                    onClick={() => handleOpenLessonGame(lesson)}
+                                                                    disabled={lessonGameLoading}
+                                                                >
+                                                                    🧠 Understand Concept
+                                                                </button>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -568,6 +1276,43 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                                             </div>
                                                         ))}
                                                     </div>
+                                                </section>
+
+                                                {/* Mini-Games */}
+                                                <section className="class-section">
+                                                    <h4>🎮 Mini-Games ({courseMiniGames.length})</h4>
+                                                    <p className="notice-sub">Life Sprint can trigger these at random moments during class.</p>
+                                                    <p className="notice-sub">🧠 Adaptive difficulty: {adaptiveModeLabel}</p>
+                                                    {miniGamesLoading && <p>Loading mini-games...</p>}
+                                                    {!miniGamesLoading && courseMiniGames.length === 0 && (
+                                                        <p>No mini-games available for this course yet.</p>
+                                                    )}
+
+                                                    {!miniGamesLoading && courseMiniGames.length > 0 && (
+                                                        <div className="quizzes-list">
+                                                            {sortedMiniGames.map((game, idx) => (
+                                                                <div
+                                                                    key={game.id}
+                                                                    data-game-id={game.id}
+                                                                    className={`quiz-item ${pendingRecommendedGameId === game.id ? 'recommended-focus' : ''}`}
+                                                                >
+                                                                    <div className="quiz-header">
+                                                                        <span className="quiz-title">{game.title}{idx === 0 ? ' ⭐ Recommended now' : ''}</span>
+                                                                        <span className="quiz-score">Pass: {game.min_passing_score}%</span>
+                                                                    </div>
+                                                                    <p className="quiz-topic">{game.topic}</p>
+                                                                    <p className="quiz-count">{game.question_count} questions • ~{game.estimated_duration_minutes} min</p>
+                                                                    <button
+                                                                        className="btn-quiz"
+                                                                        onClick={() => handleStartMiniGame(game.id)}
+                                                                        disabled={miniGamesLoading}
+                                                                    >
+                                                                        Play Mini-Game
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </section>
                                             </div>
                                         </div>
@@ -683,6 +1428,289 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Mini-Game Modal */}
+            {activeMiniGame && (
+                <div className="quiz-modal-overlay">
+                    <div className="quiz-modal">
+                        <div className="quiz-modal-header">
+                            <h2>{activeMiniGame.title}</h2>
+                            <button className="close-quiz" onClick={handleCloseMiniGame}>✕</button>
+                        </div>
+
+                        {!miniGameSubmitted ? (
+                            <>
+                                <div className="quiz-progress">
+                                    <span>Question {miniGameQuestionIndex + 1} of {activeMiniGame.questions.length}</span>
+                                    <div className="progress-bar">
+                                        <div
+                                            className="progress-fill"
+                                            style={{ width: `${((miniGameQuestionIndex + 1) / activeMiniGame.questions.length) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="quiz-question">
+                                    <h3>{activeMiniGame.questions[miniGameQuestionIndex].prompt}</h3>
+                                    <div className="quiz-options">
+                                        {activeMiniGame.questions[miniGameQuestionIndex].options.map((option: string, idx: number) => (
+                                            <button
+                                                key={idx}
+                                                className={`quiz-option ${miniGameAnswers[miniGameQuestionIndex] === idx ? 'selected' : ''}`}
+                                                onClick={() => handleMiniGameAnswerSelect(idx)}
+                                            >
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="quiz-navigation">
+                                    <button
+                                        onClick={handleMiniGamePreviousQuestion}
+                                        disabled={miniGameQuestionIndex === 0}
+                                        className="btn-nav"
+                                    >
+                                        Previous
+                                    </button>
+
+                                    {miniGameQuestionIndex < activeMiniGame.questions.length - 1 ? (
+                                        <button
+                                            onClick={handleMiniGameNextQuestion}
+                                            disabled={miniGameAnswers[miniGameQuestionIndex] === undefined || miniGamesLoading}
+                                            className="btn-nav btn-primary"
+                                        >
+                                            Next
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleSubmitMiniGame}
+                                            disabled={Object.keys(miniGameAnswers).length !== activeMiniGame.questions.length || miniGamesLoading}
+                                            className="btn-nav btn-submit"
+                                        >
+                                            {miniGamesLoading ? 'Submitting...' : 'Submit Mini-Game'}
+                                        </button>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="quiz-results">
+                                <h3>Mini-Game Complete!</h3>
+                                <div className={`score-display ${miniGameResult?.passed ? 'passed' : 'failed'}`}>
+                                    <span className="score-number">{miniGameResult?.score_percent.toFixed(1)}%</span>
+                                    <span className="score-label">
+                                        {miniGameResult?.passed ? '✅ Passed!' : '❌ Try Again'}
+                                    </span>
+                                </div>
+                                <p className="passing-score">Passing score: {activeMiniGame.min_passing_score}%</p>
+                                <p className="passing-score">Points earned: {miniGameResult?.points_earned ?? 0}</p>
+
+                                {miniGameResult?.life_impact && (
+                                    <div className="quiz-review">
+                                        <h4>Life Impact</h4>
+                                        <div className="review-item">
+                                            <p className="review-correct">💵 Balance: {miniGameResult.life_impact.balance >= 0 ? '+' : ''}{miniGameResult.life_impact.balance.toFixed(2)}</p>
+                                            <p className="review-correct">😰 Stress: {miniGameResult.life_impact.stress >= 0 ? '+' : ''}{miniGameResult.life_impact.stress.toFixed(2)}</p>
+                                            <p className="review-correct">😊 Happiness: {miniGameResult.life_impact.happiness >= 0 ? '+' : ''}{miniGameResult.life_impact.happiness.toFixed(2)}</p>
+                                            <p className="review-correct">🔥 Burnout: {miniGameResult.life_impact.burnout >= 0 ? '+' : ''}{miniGameResult.life_impact.burnout.toFixed(2)}</p>
+                                            <p className="review-correct">🎓 GPA: {miniGameResult.life_impact.gpa >= 0 ? '+' : ''}{miniGameResult.life_impact.gpa.toFixed(3)}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {miniGameResult?.career_consequences && (
+                                    <div className="quiz-review">
+                                        <h4>Career Consequences</h4>
+                                        <div className="review-item">
+                                            <p className="review-correct">💼 Salary Multiplier: x{miniGameResult.career_consequences.salary_multiplier.toFixed(3)}</p>
+                                            <p className="review-correct">🔓 Newly Unlocked: {miniGameResult.career_consequences.unlocked_now.length > 0 ? miniGameResult.career_consequences.unlocked_now.join(', ') : 'None'}</p>
+                                            <p className="review-correct">🚫 Newly Blocked: {miniGameResult.career_consequences.blocked_now.length > 0 ? miniGameResult.career_consequences.blocked_now.join(', ') : 'None'}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="quiz-review">
+                                    <h4>Feedback</h4>
+                                    {miniGameResult?.feedback.map((item, idx) => (
+                                        <div key={`${item.question_id}-${idx}`} className="review-item">
+                                            <p className={`review-answer ${item.is_correct ? 'correct' : 'incorrect'}`}>
+                                                Q{idx + 1}: {item.is_correct ? 'Correct ✅' : 'Incorrect ❌'}
+                                            </p>
+                                            {!item.is_correct && item.correct_answer && (
+                                                <p className="review-correct">Correct answer: {item.correct_answer}</p>
+                                            )}
+                                            {!item.is_correct && item.explanation && (
+                                                <p className="review-correct">Why: {item.explanation}</p>
+                                            )}
+                                            <p className="review-correct">Learning: {item.learning_point}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button className="btn-close-results" onClick={handleCloseMiniGame}>
+                                    Close
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Lesson Concept Mini-Game Modal */}
+            {activeLesson && (
+                <div className="quiz-modal-overlay">
+                    <div className="quiz-modal">
+                        <div className="quiz-modal-header">
+                            <h2>🧠 {activeLessonGame?.title || `Concept: ${activeLesson.title}`}</h2>
+                            <button className="close-quiz" onClick={handleCloseLessonGame}>✕</button>
+                        </div>
+
+                        {lessonGameLoading ? (
+                            <div className="quiz-results">
+                                <p>Loading interactive concept challenge...</p>
+                            </div>
+                        ) : lessonGameError ? (
+                            <div className="quiz-results">
+                                <p className="error-message">{lessonGameError}</p>
+                                <button className="btn-close-results" onClick={handleCloseLessonGame}>Close</button>
+                            </div>
+                        ) : activeLessonGame && activeLessonGame.questions && activeLessonGame.questions.length > 0 ? (
+                            !lessonGameSubmitted ? (
+                                <>
+                                    <div className="quiz-progress">
+                                        <span>Question {lessonGameQuestionIndex + 1} of {activeLessonGame.questions.length}</span>
+                                        <div className="progress-bar">
+                                            <div
+                                                className="progress-fill"
+                                                style={{ width: `${((lessonGameQuestionIndex + 1) / activeLessonGame.questions.length) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="quiz-question">
+                                        <p className="lesson-game-description">{activeLessonGame.description}</p>
+                                        {activeLessonGame.objectives?.length > 0 && (
+                                            <ul className="lesson-game-objectives">
+                                                {activeLessonGame.objectives.map((obj, idx) => (
+                                                    <li key={`${obj}-${idx}`}>{obj}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+
+                                        <h3>{activeLessonGame.questions[lessonGameQuestionIndex].prompt}</h3>
+                                        <div className="quiz-options">
+                                            {activeLessonGame.questions[lessonGameQuestionIndex].options.map((option: string, idx: number) => (
+                                                <button
+                                                    key={idx}
+                                                    className={`quiz-option ${lessonGameAnswers[lessonGameQuestionIndex] === idx ? 'selected' : ''}`}
+                                                    onClick={() => handleLessonAnswerSelect(idx)}
+                                                >
+                                                    {option}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="quiz-navigation">
+                                        <button
+                                            onClick={handleLessonPreviousQuestion}
+                                            disabled={lessonGameQuestionIndex === 0}
+                                            className="btn-nav"
+                                        >
+                                            Previous
+                                        </button>
+
+                                        {lessonGameQuestionIndex < activeLessonGame.questions.length - 1 ? (
+                                            <button
+                                                onClick={handleLessonNextQuestion}
+                                                disabled={lessonGameAnswers[lessonGameQuestionIndex] === undefined}
+                                                className="btn-nav btn-primary"
+                                            >
+                                                Next
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleSubmitLessonConceptGame}
+                                                disabled={Object.keys(lessonGameAnswers).length !== activeLessonGame.questions.length}
+                                                className="btn-nav btn-submit"
+                                            >
+                                                Submit Concept Check
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="quiz-results">
+                                    <h3>Concept Check Complete!</h3>
+                                    <div className={`score-display ${lessonGameResult?.passed ? 'passed' : 'failed'}`}>
+                                        <span className="score-number">{lessonGameResult?.scorePercent}%</span>
+                                        <span className="score-label">
+                                            {lessonGameResult?.passed ? '✅ Concept Understood' : '📘 Review and Retry'}
+                                        </span>
+                                    </div>
+                                    <p className="passing-score">
+                                        Correct: {lessonGameResult?.correctCount}/{lessonGameResult?.totalQuestions} (Pass: 70%)
+                                    </p>
+
+                                    <div className="quiz-review">
+                                        <h4>Concept Feedback</h4>
+                                        {activeLessonGame.questions.map((q, idx) => {
+                                            const isCorrect = lessonGameAnswers[idx] === q.correct_option_index
+                                            return (
+                                                <div key={q.id} className="review-item">
+                                                    <p className={`review-answer ${isCorrect ? 'correct' : 'incorrect'}`}>
+                                                        Q{idx + 1}: {isCorrect ? 'Correct ✅' : 'Incorrect ❌'}
+                                                    </p>
+                                                    {!isCorrect && (
+                                                        <p className="review-correct">Correct answer: {q.options[q.correct_option_index]}</p>
+                                                    )}
+                                                    <p className="review-correct">Why: {q.explanation}</p>
+                                                    <p className="review-correct">Learning: {q.learning_point}</p>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <button className="btn-close-results" onClick={handleCloseLessonGame}>
+                                        Continue Learning
+                                    </button>
+                                </div>
+                            )
+                        ) : (
+                            <div className="quiz-results">
+                                <p>No concept challenge available for this lesson yet.</p>
+                                <button className="btn-close-results" onClick={handleCloseLessonGame}>Close</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Life Moment Narrative Card */}
+            {pendingLifeMoment && (
+                <div className="modal-overlay" onClick={() => setPendingLifeMoment(null)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>🎬 {pendingLifeMoment.headline}</h2>
+                            <button className="close-btn" onClick={() => setPendingLifeMoment(null)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="info-section">
+                                <h3>Scenario</h3>
+                                <p>{pendingLifeMoment.scenario}</p>
+                            </div>
+                            <div className="info-section">
+                                <h3>Stakes</h3>
+                                <p>{pendingLifeMoment.stakes}</p>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-nav" onClick={() => setPendingLifeMoment(null)}>Skip for now</button>
+                            <button className="btn-nav btn-primary" onClick={handleStartPendingLifeMoment}>Face the Moment</button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -892,6 +1920,33 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {activeTab === 'visual' && (
+                <section className="tab-content">
+                    <VisualExperiencePanel
+                        player={player}
+                        currentCourses={currentCourses}
+                        miniGames={courseMiniGames}
+                        onJumpToAcademics={() => setActiveTab('academics')}
+                    />
+                </section>
+            )}
+
+            {activeTab === 'analytics' && (
+                <section className="tab-content">
+                    <LifeReadinessPanel
+                        playerId={player.id}
+                        onPlayRecommendation={handlePlayRecommendedGame}
+                    />
+                </section>
+            )}
+
+            {activeTab === 'store' && (
+                <section className="tab-content">
+                    <h2>🛍️ Store</h2>
+                    <p>Store features coming soon...</p>
+                </section>
             )}
         </div>
     )

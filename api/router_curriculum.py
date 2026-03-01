@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from academics.curriculum import CURRICULUM
 from api.deps import require_player
 from core_domain.player.player_model import Player
+from core_domain.store import STORE
 from catalogs.curriculums import CURRICULUMS
 from catalogs.course_content import get_course_content, get_course_lessons, get_course_quizzes
 from catalogs.curriculum_achievements import (
@@ -43,6 +44,7 @@ from catalogs.educational_resources import (
 )
 from catalogs.real_world_scenarios import get_course_scenarios
 from catalogs.lesson_games import get_lesson_game, get_lesson_games_by_course, LESSON_GAMES
+from analytics.readiness_score import calculate_life_readiness_score
 
 router = APIRouter(prefix="/curriculum", tags=["curriculum"])
 
@@ -841,7 +843,7 @@ async def attend_class(request: AttendClassRequest):
 # ===== MINI-GAMES ENDPOINTS =====
 
 @router.get("/games/course/{course_id}")
-async def get_course_games(course_id: str):
+async def get_course_games(course_id: str, player_id: str | None = Query(default=None)):
     """
     Get all available mini-games for a specific course.
     These interactive games help students learn course concepts.
@@ -849,6 +851,18 @@ async def get_course_games(course_id: str):
     from academics.course_games import get_course_games as fetch_games
     
     games = fetch_games(course_id)
+
+    player = STORE.get_player(player_id) if player_id else None
+    seen_ids = set(player.mini_game_seen_by_course.get(course_id, [])) if player else set()
+
+    completed_entries = [g for g in (player.completed_games if player else []) if g.get("course_id") == course_id]
+    completed_ids = {g.get("game_id") for g in completed_entries}
+    best_score_by_game: Dict[str, float] = {}
+    for entry in completed_entries:
+        gid = str(entry.get("game_id"))
+        score = float(entry.get("score_percent", 0.0))
+        if gid not in best_score_by_game or score > best_score_by_game[gid]:
+            best_score_by_game[gid] = score
     
     if not games:
         return {
@@ -870,6 +884,13 @@ async def get_course_games(course_id: str):
                 "question_count": len(game.questions),
                 "points_per_correct": game.points_per_correct,
                 "min_passing_score": game.min_passing_score,
+                "average_question_difficulty": round(
+                    (sum(float(q.difficulty) for q in game.questions) / max(1, len(game.questions))),
+                    2,
+                ),
+                "seen": game.id in seen_ids or game.id in completed_ids,
+                "completed": game.id in completed_ids,
+                "best_score_percent": round(best_score_by_game.get(game.id, 0.0), 1) if game.id in best_score_by_game else None,
             }
             for game in games
         ],
@@ -921,6 +942,171 @@ class GameSubmissionRequest(BaseModel):
     course_id: str
     answers: List[Dict[str, Any]]  # List of {question_id, selected_option_index}
     time_spent_minutes: int
+
+
+class MarkGameSeenRequest(BaseModel):
+    game_id: str
+    course_id: str
+
+
+@router.post("/games/seen")
+async def mark_game_seen(request: MarkGameSeenRequest, player: Player = Depends(require_player)):
+    from academics.course_games import get_game_by_id
+
+    game = get_game_by_id(request.game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail=f"Game {request.game_id} not found")
+    if game.course_id != request.course_id:
+        raise HTTPException(status_code=400, detail="Game does not belong to this course")
+
+    seen_list = player.mini_game_seen_by_course.get(request.course_id, [])
+    if request.game_id not in seen_list:
+        seen_list.append(request.game_id)
+        player.mini_game_seen_by_course[request.course_id] = seen_list
+        STORE.put_player(player)
+
+    return {
+        "course_id": request.course_id,
+        "game_id": request.game_id,
+        "seen_count_for_course": len(player.mini_game_seen_by_course.get(request.course_id, [])),
+        "message": "Mini-game marked as seen",
+    }
+
+
+def _clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def _apply_game_outcome_effects(player: Player, course_id: str, score_percent: float, passed: bool, points_earned: float) -> Dict[str, float]:
+    """
+    Apply mini-game outcome impacts to life stats for realistic progression.
+    Positive outcomes reduce stress / improve skills; poor outcomes add pressure.
+    """
+    score_ratio = _clamp(float(score_percent) / 100.0, 0.0, 1.0)
+    points = max(0.0, float(points_earned))
+
+    deltas: Dict[str, float] = {
+        "balance": 0.0,
+        "stress": 0.0,
+        "happiness": 0.0,
+        "burnout": 0.0,
+        "gpa": 0.0,
+        "technical_skills": 0.0,
+        "business_acumen": 0.0,
+        "communication_skills": 0.0,
+        "time_management": 0.0,
+        "energy_level": 0.0,
+    }
+
+    if passed:
+        deltas["balance"] = round(20.0 + points * 0.4, 2)
+        deltas["stress"] = round(-(1.5 + 3.5 * score_ratio), 2)
+        deltas["happiness"] = round(1.0 + 3.0 * score_ratio, 2)
+        deltas["burnout"] = round(-(0.8 + 2.0 * score_ratio), 2)
+        deltas["gpa"] = round(0.01 + 0.03 * score_ratio, 3)
+        deltas["energy_level"] = round(0.5 + 2.0 * score_ratio, 2)
+        deltas["time_management"] = round(0.4 + 1.6 * score_ratio, 2)
+    else:
+        miss_ratio = 1.0 - score_ratio
+        deltas["balance"] = round(-(8.0 + 12.0 * miss_ratio), 2)
+        deltas["stress"] = round(2.5 + 4.0 * miss_ratio, 2)
+        deltas["happiness"] = round(-(1.0 + 2.5 * miss_ratio), 2)
+        deltas["burnout"] = round(1.2 + 2.8 * miss_ratio, 2)
+        deltas["gpa"] = round(-(0.005 + 0.015 * miss_ratio), 3)
+        deltas["energy_level"] = round(-(0.4 + 1.6 * miss_ratio), 2)
+        deltas["time_management"] = round(0.2 + 0.8 * score_ratio, 2)
+
+    cid = (course_id or "").lower()
+    if cid.startswith("cs"):
+        deltas["technical_skills"] = round(1.0 + 3.0 * score_ratio, 2)
+    elif cid.startswith("ba") or cid.startswith("econ"):
+        deltas["business_acumen"] = round(1.0 + 3.0 * score_ratio, 2)
+        deltas["communication_skills"] = round(0.5 + 1.5 * score_ratio, 2)
+    elif cid.startswith("eng") or cid.startswith("phys"):
+        deltas["technical_skills"] = round(0.8 + 2.6 * score_ratio, 2)
+        deltas["time_management"] += round(0.3 + 0.9 * score_ratio, 2)
+    else:
+        deltas["communication_skills"] = round(0.4 + 1.2 * score_ratio, 2)
+
+    player.finance.balance = round(float(player.finance.balance) + deltas["balance"], 2)
+
+    player.stats.stress = _clamp(float(player.stats.stress) + deltas["stress"], 0.0, 100.0)
+    player.stats.happiness = _clamp(float(player.stats.happiness) + deltas["happiness"], 0.0, 100.0)
+    player.stats.burnout = _clamp(float(player.stats.burnout) + deltas["burnout"], 0.0, 100.0)
+    player.stats.gpa = _clamp(float(player.stats.gpa) + deltas["gpa"], 0.0, 4.0)
+    player.stats.technical_skills = _clamp(float(player.stats.technical_skills) + deltas["technical_skills"], 0.0, 100.0)
+    player.stats.business_acumen = _clamp(float(player.stats.business_acumen) + deltas["business_acumen"], 0.0, 100.0)
+    player.stats.communication_skills = _clamp(float(player.stats.communication_skills) + deltas["communication_skills"], 0.0, 100.0)
+    player.stats.time_management = _clamp(float(player.stats.time_management) + deltas["time_management"], 0.0, 100.0)
+    player.stats.energy_level = _clamp(float(player.stats.energy_level) + deltas["energy_level"], 0.0, 100.0)
+
+    return deltas
+
+
+def _apply_career_consequences_from_game(player: Player, course_id: str, score_percent: float, passed: bool) -> Dict[str, Any]:
+    """
+    Career-facing consequences from mini-game outcomes:
+    - unlock/block internship/interview opportunities
+    - adjust long-term salary multiplier
+    """
+    cid = (course_id or "").lower()
+    internship_key = f"internship_{cid}"
+    interview_key = f"interview_{cid}"
+
+    unlocked_now: List[str] = []
+    blocked_now: List[str] = []
+
+    # Ensure fields exist (backward compatibility for older players)
+    if not hasattr(player, "career_unlocked_opportunities"):
+        player.career_unlocked_opportunities = []
+    if not hasattr(player, "career_blocked_opportunities"):
+        player.career_blocked_opportunities = []
+    if not hasattr(player, "career_salary_multiplier"):
+        player.career_salary_multiplier = 1.0
+
+    score = float(score_percent)
+
+    if passed and score >= 85.0:
+        for key in (internship_key, interview_key):
+            if key not in player.career_unlocked_opportunities:
+                player.career_unlocked_opportunities.append(key)
+                unlocked_now.append(key)
+
+            if key in player.career_blocked_opportunities:
+                player.career_blocked_opportunities.remove(key)
+
+        player.career_salary_multiplier = _clamp(float(player.career_salary_multiplier) + 0.02, 0.8, 1.5)
+
+    elif passed:
+        if internship_key not in player.career_unlocked_opportunities:
+            player.career_unlocked_opportunities.append(internship_key)
+            unlocked_now.append(internship_key)
+
+        if internship_key in player.career_blocked_opportunities:
+            player.career_blocked_opportunities.remove(internship_key)
+
+        player.career_salary_multiplier = _clamp(float(player.career_salary_multiplier) + 0.01, 0.8, 1.5)
+
+    else:
+        if score < 60.0:
+            if interview_key not in player.career_blocked_opportunities:
+                player.career_blocked_opportunities.append(interview_key)
+                blocked_now.append(interview_key)
+
+            if interview_key in player.career_unlocked_opportunities:
+                player.career_unlocked_opportunities.remove(interview_key)
+
+            player.career_salary_multiplier = _clamp(float(player.career_salary_multiplier) - 0.02, 0.8, 1.5)
+        else:
+            player.career_salary_multiplier = _clamp(float(player.career_salary_multiplier) - 0.005, 0.8, 1.5)
+
+    return {
+        "unlocked_now": unlocked_now,
+        "blocked_now": blocked_now,
+        "salary_multiplier": round(float(player.career_salary_multiplier), 3),
+        "total_unlocked": len(player.career_unlocked_opportunities),
+        "total_blocked": len(player.career_blocked_opportunities),
+    }
 
 
 @router.post("/games/submit")
@@ -976,15 +1162,9 @@ async def submit_game(request: GameSubmissionRequest, player: Player = Depends(r
     score_data = calculate_game_score(correct_count, len(request.answers), game)
     
     # Award points to player based on performance
-    if not hasattr(player, 'game_points'):
-        player.game_points = 0
-    
     player.game_points += score_data["points_earned"]
-    
+
     # Track completed games
-    if not hasattr(player, 'completed_games'):
-        player.completed_games = []
-    
     player.completed_games.append({
         "game_id": request.game_id,
         "course_id": request.course_id,
@@ -993,6 +1173,46 @@ async def submit_game(request: GameSubmissionRequest, player: Player = Depends(r
         "passed": score_data["passed"],
         "timestamp": "now"  # Replace with actual timestamp in future
     })
+
+    seen_list = player.mini_game_seen_by_course.get(request.course_id, [])
+    if request.game_id not in seen_list:
+        seen_list.append(request.game_id)
+        player.mini_game_seen_by_course[request.course_id] = seen_list
+
+    life_impact = _apply_game_outcome_effects(
+        player,
+        course_id=request.course_id,
+        score_percent=score_data["score_percent"],
+        passed=score_data["passed"],
+        points_earned=score_data["points_earned"],
+    )
+
+    career_consequences = _apply_career_consequences_from_game(
+        player,
+        course_id=request.course_id,
+        score_percent=score_data["score_percent"],
+        passed=score_data["passed"],
+    )
+
+    player.history.append(
+        {
+            "label": "Mini-Game Completed",
+            "semester": player.semester,
+            "details": {
+                "score_percent": float(score_data["score_percent"]),
+                "points_earned": float(score_data["points_earned"]),
+                "passed": 1.0 if score_data["passed"] else 0.0,
+                "delta_stress": float(life_impact["stress"]),
+                "delta_happiness": float(life_impact["happiness"]),
+                "delta_burnout": float(life_impact["burnout"]),
+                "delta_balance": float(life_impact["balance"]),
+                "delta_gpa": float(life_impact["gpa"]),
+                "career_salary_multiplier": float(player.career_salary_multiplier),
+            },
+        }
+    )
+
+    STORE.put_player(player)
     
     return {
         "game_id": request.game_id,
@@ -1006,9 +1226,54 @@ async def submit_game(request: GameSubmissionRequest, player: Player = Depends(r
         "feedback": feedback_details,
         "key_learnings": list(set(key_learnings)),  # Unique learnings
         "total_game_points": player.game_points,
+        "life_impact": life_impact,
+        "updated_stats": {
+            "stress": float(player.stats.stress),
+            "happiness": float(player.stats.happiness),
+            "burnout": float(player.stats.burnout),
+            "gpa": float(player.stats.gpa),
+            "technical_skills": float(player.stats.technical_skills),
+            "business_acumen": float(player.stats.business_acumen),
+            "communication_skills": float(player.stats.communication_skills),
+            "time_management": float(player.stats.time_management),
+            "energy_level": float(player.stats.energy_level),
+            "balance": float(player.finance.balance),
+        },
+        "career_consequences": career_consequences,
         "message": (
             f"🎉 Great job! You scored {score_data['score_percent']:.1f}% and earned {score_data['points_earned']} points!"
             if score_data["passed"]
             else f"💡 You scored {score_data['score_percent']:.1f}%. Review the correct answers and try again!"
         )
+    }
+
+
+@router.get("/analytics/{player_id}")
+def get_life_readiness_analytics(player_id: str):
+    """
+    Get comprehensive Life Readiness Score analytics.
+    Shows player's readiness across skill domains based on mini-game performance.
+    
+    Returns:
+    - Overall readiness score (0-100)
+    - Domain breakdowns (finance, leadership, technical, critical thinking, ethics)
+    - Strengths and areas for growth
+    - Career readiness indicators
+    - Recommended next challenges
+    """
+    player = STORE.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    analytics = calculate_life_readiness_score(player)
+    
+    # Save updated player with badges and history
+    STORE.put_player(player)
+    
+    return {
+        "player_id": player_id,
+        "player_name": player.name,
+        "semester": player.semester,
+        "analytics": analytics.model_dump(),
+        "readiness_history": player.readiness_history,
     }

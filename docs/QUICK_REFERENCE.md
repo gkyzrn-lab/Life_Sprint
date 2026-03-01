@@ -203,7 +203,7 @@ GET    /health/{player_id}/streaks
 POST   /health/{player_id}/progress-semester
 ```
 
-See [HEALTH_SYSTEM.md](../HEALTH_SYSTEM.md) for full health mechanics and examples.
+See [HEALTH_SYSTEM.md](legacy-root-notes/systems/HEALTH_SYSTEM.md) for full health mechanics and examples.
 
 ---
 

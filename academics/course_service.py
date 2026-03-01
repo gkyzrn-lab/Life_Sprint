@@ -11,7 +11,7 @@ from core_domain.player.player_model import Player
 from academics.curriculum import CURRICULUM
 from catalogs.course_content import COURSE_CONTENT
 from academics.course_games import get_course_games, get_game_by_id, calculate_game_score
-from catalogs.ba_course_topics import format_course_topics_for_display
+from catalogs.course_topics import format_course_topics
 
 
 def get_course_info(course_id: str) -> Dict[str, Any]:
@@ -69,8 +69,8 @@ def get_course_info(course_id: str) -> Dict[str, Any]:
         for game in games
     ]
 
-    # Add formatted course topics (BA courses have special formatting)
-    topics_display = format_course_topics_for_display(course_id)
+    # Add formatted course topics (major-specific enrichment)
+    topics_display = format_course_topics(course_id)
     if topics_display.get("found"):
         course_data["formatted_topics"] = topics_display
 

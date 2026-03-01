@@ -40,15 +40,18 @@ curl -X POST http://localhost:8000/player/start \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Alice",
-    "college_id": "nyc_public",
-    "major_id": "cs",
+    "college_id": "cuny_baruch",
+    "major_id": "finance",
+    "hs_gpa": 3.5,
+    "parent_income": 70000,
+    "starting_balance": 5000,
     "housing_option_id": "dorm"
   }'
 ```
 
-Get tutorials:
+Check your player:
 ```bash
-curl http://localhost:8000/onboarding/tutorial-sequence
+curl http://localhost:8000/player/{player_id}
 ```
 
 ## Run Tests
@@ -61,31 +64,24 @@ pytest -q
 
 Expected: **All selected tests passed** ✅
 
-## Build a Frontend
+## Use the Frontend
 
-The backend is ready! Now build a UI. Choose one:
+A complete React frontend is included! Start it:
 
-### Option 1: React (Recommended for Learning)
 ```bash
-npx create-react-app life-sprint-game
-cd life-sprint-game
-npm start
-```
-Then copy the `OnboardingModal` component from `ONBOARDING_INTEGRATION.tsx.example`
-
-### Option 2: Next.js (Full-Stack)
-```bash
-npx create-next-app@latest life-sprint-game --typescript
-cd life-sprint-game
+cd /Users/oktaygokayzeren/Desktop/Life_Sprint/life-sprint-frontend
+npm install  # First time only
 npm run dev
 ```
 
-### Option 3: Vue 3
-```bash
-npm create vue@latest life-sprint-game
-cd life-sprint-game
-npm install && npm run dev
-```
+Then open: **http://localhost:3000**
+
+The frontend is fully integrated with the backend and includes:
+- Player creation
+- Dashboard
+- Planning system
+- Exam system
+- And much more!
 
 ## Project Structure
 
@@ -123,12 +119,12 @@ Life_Sprint/
 |--------|----------|---------|
 | POST | `/player/start` | Create new player |
 | GET | `/player/{id}` | Get player data |
-| GET | `/onboarding/tutorial-sequence` | Get all tutorials |
+| GET | `/tutorial/{player_id}/start` | Start tutorial quest |
 | GET | `/onboarding/tutorial/{id}` | Get single tutorial |
 | POST | `/onboarding/tutorial/complete` | Mark tutorial complete |
 | GET | `/onboarding/{player_id}/progress` | Get tutorial progress |
 
-See [ONBOARDING.md](ONBOARDING.md) for onboarding endpoints and [HEALTH_SYSTEM.md](HEALTH_SYSTEM.md) for health endpoints.
+See [ONBOARDING.md](docs/legacy-root-notes/onboarding/ONBOARDING.md) for onboarding endpoints and [HEALTH_SYSTEM.md](docs/legacy-root-notes/systems/HEALTH_SYSTEM.md) for health endpoints.
 
 ## Development Workflow
 
@@ -201,8 +197,8 @@ pytest tests/test_onboarding.py -v  # Run specific test file
 
 ## Need Help?
 
-- **API Reference**: See [ONBOARDING.md](ONBOARDING.md)
-- **Code Examples**: See [ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example)
+- **API Reference**: See [ONBOARDING.md](docs/legacy-root-notes/onboarding/ONBOARDING.md)
+- **Code Examples**: See [ONBOARDING_INTEGRATION.tsx.example](examples/frontend/ONBOARDING_INTEGRATION.tsx.example)
 - **Design Details**: See [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
 - **Run Tests**: `pytest -q`
 

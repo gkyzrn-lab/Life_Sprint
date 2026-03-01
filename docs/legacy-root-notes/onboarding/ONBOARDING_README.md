@@ -228,7 +228,7 @@ curl -X POST http://localhost:8000/onboarding/tutorial/complete \
 ## 📚 Documentation
 
 - **[ONBOARDING.md](ONBOARDING.md)** – Complete API reference with examples
-- **[ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example)** – React/TypeScript integration examples
+- **[ONBOARDING_INTEGRATION.tsx.example](../../../examples/frontend/ONBOARDING_INTEGRATION.tsx.example)** – React/TypeScript integration examples
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** – Design decisions & architecture
 
 ---
@@ -252,7 +252,7 @@ The component would:
 5. Enable context-specific help on game pages
 6. Show inline tooltips on hover
 
-See [ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example) for full example.
+See [ONBOARDING_INTEGRATION.tsx.example](../../../examples/frontend/ONBOARDING_INTEGRATION.tsx.example) for full example.
 
 ---
 

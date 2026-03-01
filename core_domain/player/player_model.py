@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 from enum import Enum
-from typing import Dict, List, Optional, Set, Literal
+from typing import Dict, List, Optional, Set, Literal, Any, TYPE_CHECKING
 from pydantic import BaseModel, Field, computed_field
 
 from core_domain.stats.stats_model import Stats
@@ -20,6 +20,11 @@ from core_domain.finance.finance_models import Finance, Loan, LoanType, LoanPort
 from core_domain.planning.planning_models import SemesterPlan
 from core_domain.health.health_models import Health
 from core_domain.tutorial import TutorialState
+
+if TYPE_CHECKING:
+    from core_domain.quests.quest_models import PlayerQuestState
+    from core_domain.side_gigs.side_gigs_models import SideGigsState
+    from core_domain.player.skill_ratings import PlayerSkillRatings
 
 
 # =========================
@@ -151,6 +156,12 @@ class Player(BaseModel):
 
     # Tutorial & onboarding
     tutorial_state: TutorialState = Field(default_factory=TutorialState)
+    
+    # Quest system tracking
+    quest_state: Optional["PlayerQuestState"] = None
+    
+    # Skill ratings for adaptive difficulty
+    skill_ratings: Optional["PlayerSkillRatings"] = None
 
     # Side gigs tracking
     side_gigs: Optional["SideGigsState"] = None
@@ -161,6 +172,22 @@ class Player(BaseModel):
 
     # NEW: courses dropped due to burnout
     dropped_courses: List[Dict] = Field(default_factory=list)
+
+    # Mini-game progression (persisted across refresh/login)
+    game_points: int = 0
+    completed_games: List[Dict[str, Any]] = Field(default_factory=list)
+    mini_game_seen_by_course: Dict[str, List[str]] = Field(default_factory=dict)
+
+    # Career consequences from mini-games
+    career_salary_multiplier: float = 1.0
+    career_unlocked_opportunities: List[str] = Field(default_factory=list)
+    career_blocked_opportunities: List[str] = Field(default_factory=list)
+
+    # Achievement badges
+    earned_badges: List[str] = Field(default_factory=list)
+
+    # Historical readiness tracking (snapshots over time)
+    readiness_history: List[Dict[str, Any]] = Field(default_factory=list)
 
     @computed_field
     @property
@@ -189,10 +216,21 @@ class Player(BaseModel):
         return round(self.finance.loan_portfolio.total_balance, 2)
 
     def model_post_init(self, __context) -> None:
-        """Initialize side_gigs after model creation to avoid circular import."""
+        """Initialize side_gigs, quest_state, and skill_ratings after model creation to avoid circular import."""
         if self.side_gigs is None:
             from core_domain.side_gigs.side_gigs_models import SideGigsState
             object.__setattr__(self, 'side_gigs', SideGigsState())
+        if self.quest_state is None:
+            from core_domain.quests.quest_models import PlayerQuestState
+            object.__setattr__(self, 'quest_state', PlayerQuestState(
+                active_quests=[],
+                completed_quests=[],
+                tutorial_complete=False,
+                tutorial_completion_time_seconds=None
+            ))
+        if self.skill_ratings is None:
+            from core_domain.player.skill_ratings import PlayerSkillRatings
+            object.__setattr__(self, 'skill_ratings', PlayerSkillRatings())
 
 
 # =========================
@@ -204,5 +242,6 @@ class ApiError(BaseModel):
 
 
 # Rebuild Player model after SideGigsState is defined
+# NOTE: Rebuild deferred to avoid circular import with PlayerQuestState
+# Model will rebuild automatically on first use
 from core_domain.side_gigs.side_gigs_models import SideGigsState
-Player.model_rebuild()

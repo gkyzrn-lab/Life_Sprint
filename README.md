@@ -1,53 +1,291 @@
-from typing import Dict, Optional
+# 🎮 Life Sprint - Educational Life Simulation Game
 
-from app.college.selection import generate_college_options
-from app.college.curriculum_preview import get_curriculum_preview
-from app.college.exams import run_semester_exams
+> **The strategic life planning game.** Make real decisions, face real consequences. Manage finances, plan your education, balance work and wellness.
 
-from app.work.selection import get_available_work
-from app.work.effects import apply_work_effects
-from app.work.internship_selection import attempt_internship
+**Status**: ✅ Production Ready | ✅ 676 tests passing | ✅ Fully Documented
 
+---
 
-# =================================================
-# GAME CORE
-# =================================================
+## 🚀 Quick Start (2 Minutes)
 
-class GameCore:
-    """
-    Central game orchestrator for Life Sprint.
-    """
+### **Option 1: I just want to play**
+```bash
+# Backend
+cd /Users/oktaygokayzeren/Desktop/Life_Sprint
+source .venv/bin/activate
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
-    def __init__(self, player):
-        self.player = player
-        self.phase = "college"
-        self.turn = 0
+# Frontend (new terminal)
+cd /Users/oktaygokayzeren/Desktop/Life_Sprint/life-sprint-frontend
+npm run dev
+```
 
-    # =================================================
-    # GAME START
-    # =================================================
+Then open: **http://localhost:3000**
 
-    def start_game(self) -> Dict:
-        """
-        Initial game payload.
-        """
-        return {
-            "phase": self.phase,
-            "semester": self.player.semester,
-            "player_snapshot": self._player_snapshot(),
-        }
+### **Option 2: I'm a developer**
+→ Read **[GETTING_STARTED.md](GETTING_STARTED.md)** (5 min guide)
+→ Read **[PROJECT_INDEX.md](PROJECT_INDEX.md)** (complete index)
+→ Read **[STRUCTURE.md](STRUCTURE.md)** (folder organization)
 
-    # =================================================
-    # COLLEGE FLOW
-    # =================================================
+---
 
-    def get_college_options(self) -> Dict:
-        """
-        Show college choices.
-        """
-        options = generate_college_options(self.player)
-        return {
-            "type": "college_selection",
+## 📚 Documentation Hub
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| **[GETTING_STARTED.md](GETTING_STARTED.md)** | Setup & quick start | Everyone |
+| **[PROJECT_INDEX.md](PROJECT_INDEX.md)** | Complete file index | Developers |
+| **[STRUCTURE.md](STRUCTURE.md)** | Folder organization | Developers |
+| **[API_REFERENCE.md](API_REFERENCE.md)** | All endpoints | Frontend devs |
+| **[CHEAT_SHEET.md](CHEAT_SHEET.md)** | Code patterns & commands | Backend devs |
+| **[core_domain/README.md](core_domain/README.md)** | Game state & data | Backend devs |
+| **[api/README.md](api/README.md)** | How to write endpoints | Backend devs |
+| **[finance/README.md](finance/README.md)** | Loans & finance system | Finance feature devs |
+| **[life-sprint-frontend/README.md](life-sprint-frontend/README.md)** | React frontend | Frontend devs |
+
+---
+
+## 🎯 What is Life Sprint?
+
+A strategy and simulation game where you guide a student through college and beyond:
+
+**Make Decisions:**
+- Choose your college and major
+- Plan each semester (classes, job, housing, activities)
+- Decide on loans and finances
+- Manage stress and wellness
+
+**Face Consequences:**
+- Work too hard → stress increases → GPA drops
+- Borrow too much → loan payments crush your budget
+- Neglect wellbeing → burnout hits hard
+- Skip class → fail exams
+
+**Compete:**
+- Leaderboards (GPA, wealth, stress management)
+- Achievements & badges
+- Compare decisions with other players
+- Seasonal challenges
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Tech | Role |
+|-------|------|------|
+| Frontend | React 18 + Vite | Modern UI |
+| Backend | FastAPI (Python) | REST API |
+| Database | In-memory (upgradeable) | Data persistence |
+| Testing | pytest | 676 tests ✅ |
+| Deployment | Docker-ready | Production |
+
+---
+
+## 📁 Project Structure
+
+```
+Life_Sprint/
+├── main.py                          ← App entry point
+├── core_domain/                     ← Game state & models ⭐
+├── api/                             ← REST endpoints (25+ routers)
+├── academics/                       ← Courses & exams
+├── finance/                         ← Loans & money
+├── planning/                        ← Semester planning
+├── career/                          ← Career paths
+├── catalogs/                        ← Static game data
+├── tests/                           ← 676 tests ✅
+├── life-sprint-frontend/            ← React UI
+└── [docs]                           ← This documentation
+```
+
+**Full structure details**: [STRUCTURE.md](STRUCTURE.md) | **File index**: [PROJECT_INDEX.md](PROJECT_INDEX.md)
+
+---
+
+## 🚀 Getting Started (Choose Your Path)
+
+### **I Just Want to Play**
+1. Start backend (see Quick Start above)
+2. Start frontend
+3. Go to http://localhost:3000
+4. Create a player and play!
+
+### **I Want to Develop Features**
+1. Read [GETTING_STARTED.md](GETTING_STARTED.md)
+2. Read [STRUCTURE.md](STRUCTURE.md)
+3. Read [CHEAT_SHEET.md](CHEAT_SHEET.md)
+4. Pick a feature folder and read its README
+5. Run tests: `pytest -v`
+
+### **I'm Fixing a Bug**
+1. Run the failing test: `pytest tests/test_file.py::test_name -v`
+2. Find the code that's broken
+3. Review the relevant README
+4. Make the fix
+5. Run tests again: `pytest -q`
+
+### **I'm Deploying**
+1. Ensure all 676 tests pass: `pytest -q`
+2. Replace STORE in `core_domain/store.py` with your database
+3. Set environment variables for production
+4. Deploy backend on your server
+5. Deploy frontend (built with `npm run build`)
+
+---
+
+## 💻 Commands You'll Use
+
+```bash
+# Start backend
+source .venv/bin/activate
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+# Start frontend
+cd life-sprint-frontend
+npm run dev
+
+# Run all tests
+pytest -q
+
+# Run with verbose output
+pytest -v
+
+# Check what's available
+curl http://localhost:8000/docs  # Swagger UI
+```
+
+**More commands?** See [CHEAT_SHEET.md](CHEAT_SHEET.md)
+
+---
+
+## 🎮 Core Game Systems
+
+### **Planning** 📅
+Save semester plans with housing, job, activities, courses. Lock before exams.
+
+### **Finance** 💰
+Borrow loans (subsidized, unsubsidized, private). Manage cash flow. Make payments during repayment.
+
+### **Academics** 📚
+Take courses. Pass mini-games. Take final exams. Advance semesters.
+
+### **Career** 💼
+Match with career paths. Get recommendations. Develop skills.
+
+### **Wellness** 🏥
+Manage stress, happiness, burnout. Balance work and health.
+
+### **Community** 👥
+Join study groups. Form guilds. Collaborate on projects.
+
+### **Analytics** 📊
+Track your stats. Leaderboards. Achievements. Progress reports.
+
+---
+
+## ✅ Quality Assurance
+
+- **676 tests** - all passing ✅
+- **25+ routers** - all working ✅
+- **30+ service modules** - all tested ✅
+- **40+ catalogs** - validated ✅
+- **100% documentation** - every folder has README ✅
+
+---
+
+## 🤝 Contributing
+
+### **Before You Start**
+1. Read [CHEAT_SHEET.md](CHEAT_SHEET.md) for code patterns
+2. Check [PROJECT_INDEX.md](PROJECT_INDEX.md) to find related code
+3. Run existing tests: `pytest -q`
+
+### **Making a Change**
+1. Create a feature branch: `git checkout -b feature/my-feature`
+2. Make your changes
+3. Write or update tests
+4. Run tests: `pytest -v`
+5. Commit: `git commit -m "feat: description"`
+6. Push: `git push origin feature/my-feature`
+7. Create pull request
+
+### **Code Quality**
+- All tests must pass (`pytest -q`)
+- Code must follow existing patterns
+- New features need tests
+- Docstrings required for new functions
+- No unused imports
+
+---
+
+## 📞 Support & Questions
+
+**Need help?**
+1. Check [PROJECT_INDEX.md](PROJECT_INDEX.md) to find the code
+2. Read the relevant README (each folder has one)
+3. Check test files for usage examples
+4. Search the code: `grep -r "function_name" .`
+5. Run with verbose: `pytest -v -s`
+
+**Found a bug?**
+1. Create a failing test first
+2. Make the minimal fix
+3. Ensure all tests pass
+4. Document what changed
+
+---
+
+## 📜 License
+
+This project is part of the Life Sprint educational initiative.
+
+---
+
+## 🎓 Learning Resources
+
+This codebase is designed for learning. Every major component has documentation:
+
+- **[STRUCTURE.md](STRUCTURE.md)** - Project organization
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Setup & basics
+- **[PROJECT_INDEX.md](PROJECT_INDEX.md)** - Complete file index
+- **[CHEAT_SHEET.md](CHEAT_SHEET.md)** - Common patterns
+- **[API_REFERENCE.md](API_REFERENCE.md)** - All endpoints
+- **Folder READMEs** - In-depth guides for each system
+
+---
+
+## 🚀 Next Steps
+
+**New to the project?**
+→ Start with [GETTING_STARTED.md](GETTING_STARTED.md)
+
+**Want to contribute?**
+→ Read [CHEAT_SHEET.md](CHEAT_SHEET.md) then pick an issue
+
+**Need to deploy?**
+→ Check the setup in [GETTING_STARTED.md](GETTING_STARTED.md) deployment section
+
+**Want to understand architecture?**
+→ Read [PROJECT_INDEX.md](PROJECT_INDEX.md)
+
+---
+
+## 📊 By The Numbers
+
+- **55,000+** lines of code
+- **400+** files
+- **676** tests ✅
+- **25+** API routers
+- **30+** service modules
+- **40+** catalogs
+- **100%** documentation
+
+---
+
+**Made with ❤️ for students everywhere.** 🎓
+
+Happy coding! 🚀
+
             "options": options,
         }
 

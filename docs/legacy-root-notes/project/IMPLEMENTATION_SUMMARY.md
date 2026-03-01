@@ -21,12 +21,12 @@ A complete onboarding and tutorial system for Life Sprint that guides first-time
   - 11 comprehensive tests covering all onboarding functionality
   - 100% pass rate
   
-- **[ONBOARDING.md](ONBOARDING.md)** (Documentation)
+- **[ONBOARDING.md](../onboarding/ONBOARDING.md)** (Documentation)
   - Complete API reference
   - Example flows and curl commands
   - Implementation details and testing instructions
   
-- **[ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example)** (Example code)
+- **[ONBOARDING_INTEGRATION.tsx.example](../../../examples/frontend/ONBOARDING_INTEGRATION.tsx.example)** (Example code)
   - TypeScript/React integration examples
   - Sample React component showing modal-based onboarding
   - Full game initialization flow
@@ -215,8 +215,8 @@ curl -X POST http://localhost:8000/onboarding/tutorial/complete \
 
 ## Questions?
 
-See [ONBOARDING.md](ONBOARDING.md) for detailed API docs and examples.
-See [ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example) for frontend integration patterns.
+See [ONBOARDING.md](../onboarding/ONBOARDING.md) for detailed API docs and examples.
+See [ONBOARDING_INTEGRATION.tsx.example](../../../examples/frontend/ONBOARDING_INTEGRATION.tsx.example) for frontend integration patterns.
 
 ---
 
@@ -224,4 +224,4 @@ See [ONBOARDING_INTEGRATION.tsx.example](ONBOARDING_INTEGRATION.tsx.example) for
 
 - **Health system expansion**: New progress, history, and batch action endpoints.
 - **Comprehensive health tests**: [tests/test_health.py](tests/test_health.py) with 28 passing tests.
-- **Health documentation**: [HEALTH_SYSTEM.md](HEALTH_SYSTEM.md) for complete feature and API details.
+- **Health documentation**: [HEALTH_SYSTEM.md](../systems/HEALTH_SYSTEM.md) for complete feature and API details.

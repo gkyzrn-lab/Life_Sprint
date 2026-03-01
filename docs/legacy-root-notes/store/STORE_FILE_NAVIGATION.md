@@ -130,7 +130,7 @@ except Exception:
 → Read [STORE_SYSTEM_IMPLEMENTATION.md](STORE_SYSTEM_IMPLEMENTATION.md)
 
 **...look up an item**
-→ Check [LIFE_PURCHASES_COMPLETE.md](LIFE_PURCHASES_COMPLETE.md)
+→ Check [LIFE_PURCHASES_COMPLETE.md](../systems/LIFE_PURCHASES_COMPLETE.md)
 
 **...integrate with code**
 → See [store/purchase_service.py](store/purchase_service.py)
@@ -317,7 +317,7 @@ For help with:
 - **Overview**: Read [STORE_IMPLEMENTATION_SUMMARY.md](STORE_IMPLEMENTATION_SUMMARY.md)
 - **API Usage**: See [STORE_QUICK_REFERENCE.md](STORE_QUICK_REFERENCE.md)
 - **Architecture**: Check [STORE_SYSTEM_IMPLEMENTATION.md](STORE_SYSTEM_IMPLEMENTATION.md)
-- **Details**: Review [LIFE_PURCHASES_COMPLETE.md](LIFE_PURCHASES_COMPLETE.md)
+- **Details**: Review [LIFE_PURCHASES_COMPLETE.md](../systems/LIFE_PURCHASES_COMPLETE.md)
 
 ---
 

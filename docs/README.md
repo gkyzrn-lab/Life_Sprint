@@ -30,7 +30,7 @@ npm install  # First time only
    - Component architecture
    - File-by-file breakdown
    - How the code is organized
-4. **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)**
+4. **[ARCHITECTURE_DIAGRAM.md](legacy-root-notes/project/ARCHITECTURE_DIAGRAM.md)**
    - Visual ASCII diagrams
 
 ### For Project Overview
@@ -302,13 +302,13 @@ If all checks pass: ✅ **You're ready to play!**
 → Read [FRONTEND_IMPLEMENTATION_SUMMARY.md](FRONTEND_IMPLEMENTATION_SUMMARY.md) (20 min read)
 
 **I want visual diagrams**
-→ Read [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md) (10 min read)
+→ Read [ARCHITECTURE_DIAGRAM.md](legacy-root-notes/project/ARCHITECTURE_DIAGRAM.md) (10 min read)
 
 **I want the complete overview**
-→ Read [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) (10 min read)
+→ Read [IMPLEMENTATION_STATUS.md](legacy-root-notes/project/IMPLEMENTATION_STATUS.md) (10 min read)
 
 **I want health system details**
-→ Read [HEALTH_SYSTEM.md](../HEALTH_SYSTEM.md) (15 min read)
+→ Read [HEALTH_SYSTEM.md](legacy-root-notes/systems/HEALTH_SYSTEM.md) (15 min read)
 
 **I want frontend-specific info**
 → Read [life-sprint-frontend/README.md](life-sprint-frontend/README.md) (15 min read)

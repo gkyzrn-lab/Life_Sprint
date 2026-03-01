@@ -1,0 +1,582 @@
+/* Tutorial Quest Modal Styles */
+
+.tutorial-quest-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.tutorial-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.4s ease;
+    color: white;
+}
+
+.tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.quest-title h2 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 800;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.quest-subtitle {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.header-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.mini-progress-bar {
+    width: 120px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mini-progress-fill {
+    height: 100%;
+    background: #4ade80;
+    transition: width 0.5s ease;
+}
+
+.btn-skip {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-skip:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mascot */
+.mascot-section {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    position: relative;
+}
+
+.mascot-avatar {
+    font-size: 48px;
+    animation: bounce 2s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.mascot-bubble {
+    flex: 1;
+    background: white;
+    color: #333;
+    padding: 15px 20px;
+    border-radius: 15px;
+    position: relative;
+    font-size: 16px;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mascot-bubble::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 10px 10px 0;
+    border-color: transparent white transparent transparent;
+}
+
+.mascot-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+}
+
+.mascot-close:hover {
+    color: #333;
+}
+
+/* Question Section */
+.question-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.question-number {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 600;
+}
+
+.btn-hint {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-hint:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.question-text {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.hint-box {
+    background: rgba(255, 215, 0, 0.2);
+    border-left: 4px solid #ffd700;
+    padding: 12px 15px;
+    margin: 15px 0;
+    border-radius: 8px;
+    font-size: 15px;
+    animation: slideIn 0.3s ease;
+}
+
+/* Choices */
+.choices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.choice-button {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid transparent;
+    padding: 15px 20px;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.choice-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(5px);
+}
+
+.choice-button.selected {
+    background: rgba(74, 222, 128, 0.3);
+    border-color: #4ade80;
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+}
+
+.choice-letter {
+    background: rgba(255, 255, 255, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.choice-button.selected .choice-letter {
+    background: #4ade80;
+    color: #1a1a2e;
+}
+
+.choice-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.choice-checkmark {
+    font-size: 24px;
+    color: #4ade80;
+    flex-shrink: 0;
+}
+
+/* Navigation */
+.tutorial-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.tutorial-navigation button {
+    flex: 1;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 222, 128, 0.5);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+}
+
+/* Learning Objective */
+.learning-objective {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* Result Screen */
+.tutorial-result {
+    color: white;
+}
+
+.result-summary {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.result-summary h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.score-number {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+.score-details {
+    text-align: left;
+}
+
+.score-details p {
+    margin: 8px 0;
+    font-size: 18px;
+}
+
+.points-earned {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 20px !important;
+    animation: pulse 0.5s ease;
+}
+
+/* Feedback */
+.feedback-section {
+    margin: 30px 0;
+}
+
+.feedback-section h3 {
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.feedback-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-left: 4px solid;
+}
+
+.feedback-item.correct {
+    border-left-color: #4ade80;
+}
+
+.feedback-item.incorrect {
+    border-left-color: #f87171;
+}
+
+.feedback-question {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.feedback-answer {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.feedback-explanation {
+    font-size: 14px;
+    opacity: 0.95;
+    line-height: 1.5;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+/* Quest Progress Bar */
+.quest-progress-bar {
+    margin: 25px 0;
+}
+
+.progress-label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.progress-bar {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.result-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.result-actions button {
+    min-width: 200px;
+    padding: 15px 30px;
+    font-size: 18px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Loading */
+.loading-spinner {
+    text-align: center;
+    padding: 50px;
+    font-size: 20px;
+    animation: pulse 1.5s infinite;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .tutorial-content {
+        width: 95%;
+        padding: 20px;
+        max-height: 95vh;
+    }
+
+    .quest-title h2 {
+        font-size: 22px;
+    }
+
+    .mascot-avatar {
+        font-size: 36px;
+    }
+
+    .mascot-bubble {
+        font-size: 14px;
+    }
+
+    .question-text {
+        font-size: 18px;
+    }
+
+    .choice-button {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .score-circle {
+        width: 100px;
+        height: 100px;
+    }
+
+    .score-number {
+        font-size: 36px;
+    }
+}

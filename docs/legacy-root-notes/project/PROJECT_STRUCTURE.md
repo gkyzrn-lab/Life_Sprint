@@ -47,7 +47,7 @@ Life_Sprint/
 - **[docs/FINANCIAL_MECHANICS_DETAILED.md](docs/FINANCIAL_MECHANICS_DETAILED.md)** - How loans & interest work
 - **[docs/COLLEGE_MAJORS_EXPANSION.md](docs/COLLEGE_MAJORS_EXPANSION.md)** - All 14 new majors documented
 - **[docs/IMPROVEMENTS_SUMMARY.md](docs/IMPROVEMENTS_SUMMARY.md)** - System improvements made
-- **[HEALTH_SYSTEM.md](HEALTH_SYSTEM.md)** - Health mechanics, achievements, and APIs
+- **[HEALTH_SYSTEM.md](../systems/HEALTH_SYSTEM.md)** - Health mechanics, achievements, and APIs
 
 ### Testing & Validation
 - **[docs/COMPREHENSIVE_TEST_REPORT.md](docs/COMPREHENSIVE_TEST_REPORT.md)** - Full test results

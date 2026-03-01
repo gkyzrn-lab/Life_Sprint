@@ -232,8 +232,8 @@ npm run test
 - **[COMPLETE_SETUP_GUIDE.md](COMPLETE_SETUP_GUIDE.md)** - Detailed setup
 - **[IMPROVEMENTS_SUMMARY.md](IMPROVEMENTS_SUMMARY.md)** - This improvements work
 - **[FRONTEND_IMPLEMENTATION_SUMMARY.md](FRONTEND_IMPLEMENTATION_SUMMARY.md)** - Code structure
-- **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)** - Visual diagrams
-- **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Project status
+- **[ARCHITECTURE_DIAGRAM.md](legacy-root-notes/project/ARCHITECTURE_DIAGRAM.md)** - Visual diagrams
+- **[IMPLEMENTATION_STATUS.md](legacy-root-notes/project/IMPLEMENTATION_STATUS.md)** - Project status
 
 ### In-Project Documentation
 - **[frontend/src/test/README.md](../life-sprint-frontend/src/test/README.md)** - Test setup & coverage
