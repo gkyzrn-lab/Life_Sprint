@@ -17,12 +17,17 @@ import {
     LessonGameQuestion,
     MiniGameSubmissionResult,
     GameRecommendation,
+    getSemesterExamStatus,
+    generateSemesterExam,
+    submitSemesterExam,
+    advanceSemester,
 } from '../utils/api'
 import { getSemesterInfo, getCurrentPhase } from '../utils/semesterUtils'
 import LifeReadinessPanel from './LifeReadinessPanel'
 import VisualExperiencePanel from './VisualExperiencePanel'
 import FinanceToolsPanel from './FinanceToolsPanel'
 import { StorePanel } from './StorePanel'
+import SemesterSummaryScreen from './SemesterSummaryScreen'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -79,6 +84,8 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
     const [examAnswers, setExamAnswers] = useState<Record<number, string>>({})
     const [examSubmitted, setExamSubmitted] = useState(false)
     const [examScore, setExamScore] = useState<number | null>(null)
+    const [semesterSummary, setSemesterSummary] = useState<any | null>(null)
+    const [showSemesterSummary, setShowSemesterSummary] = useState(false)
 
     // Quiz state
     const [activeQuiz, setActiveQuiz] = useState<any | null>(null)
@@ -495,44 +502,69 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
 
     const handleSubmitSemesterExam = async () => {
         try {
+            setLoading(true)
             const answers = activeExam.questions.map((q: any, idx: number) => ({
                 question_id: q.id,
                 chosen_choice_id: examAnswers[idx]
             }))
 
-            const response = await fetch(`/api/exams/semester-exam/submit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    player_id: player.id,
-                    answers: answers
-                })
+            const result = await submitSemesterExam({
+                player_id: player.id,
+                answers: answers
             })
-
-            if (!response.ok) throw new Error('Failed to submit exam')
-            const result = await response.json()
 
             setExamSubmitted(true)
             setExamScore(result.exam_result.score_percent)
+
+            // If exam passed, show "progress to next semester" button
+            // (The summary will show after they click it)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to submit exam')
+        } finally {
+            setLoading(false)
         }
     }
 
     const handleProgressSemester = async () => {
         try {
             setLoading(true)
-            const response = await fetch(`/api/exams/progress-semester?player_id=${player.id}`, {
-                method: 'POST'
-            })
-            if (!response.ok) throw new Error('Failed to progress semester')
 
-            setShowSemesterExam(false)
-            setActiveExam(null)
-            // Note: In a real app, you'd reload the player data here
-            window.location.reload()
+            // Call the progression API
+            const summary = await advanceSemester(player.id)
+
+            // Show the summary screen
+            setSemesterSummary(summary)
+            setShowSemesterSummary(true)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to progress semester')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleContinueAfterSummary = async () => {
+        try {
+            setLoading(true)
+
+            // Refresh player data from server
+            if (onRefreshPlayer) {
+                const updated = await onRefreshPlayer(player.id)
+                if (updated && onPlayerUpdate) {
+                    onPlayerUpdate(updated)
+                }
+            }
+
+            // Close all exam/summary modals
+            setShowSemesterExam(false)
+            setShowSemesterSummary(false)
+            setActiveExam(null)
+            setSemesterSummary(null)
+            setExamSubmitted(false)
+            setExamScore(null)
+            setExamAnswers({})
+            setExamQuestionIndex(0)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to continue')
         } finally {
             setLoading(false)
         }
@@ -2232,6 +2264,15 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
                 <section className="tab-content">
                     <StorePanel player={player} onPlayerUpdate={onPlayerUpdate} onRefreshPlayer={onRefreshPlayer} />
                 </section>
+            )}
+
+            {/* Semester Summary Screen */}
+            {showSemesterSummary && semesterSummary && (
+                <SemesterSummaryScreen
+                    summary={semesterSummary}
+                    onContinue={handleContinueAfterSummary}
+                    isLoading={loading}
+                />
             )}
         </div>
     )

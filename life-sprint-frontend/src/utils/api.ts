@@ -635,6 +635,61 @@ export async function submitLessonGame(
     return response.json()
 }
 
+// Exams & Progression
+export async function getSemesterExamStatus(playerId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/exams/semester-exam-status?player_id=${encodeURIComponent(playerId)}`)
+    if (!response.ok) throw new Error(`Failed to load exam status: ${response.statusText}`)
+    return response.json()
+}
+
+export async function generateSemesterExam(playerId: string, numQuestions: number = 5): Promise<any> {
+    const response = await fetch(`${API_BASE}/exams/semester-exam/generate?player_id=${encodeURIComponent(playerId)}&num_questions=${numQuestions}`, {
+        method: 'POST',
+    })
+    if (!response.ok) throw new Error(`Failed to generate exam: ${response.statusText}`)
+    return response.json()
+}
+
+export interface SemesterExamSubmission {
+    player_id: string
+    answers: Array<{
+        question_id: string
+        chosen_choice_id: string
+    }>
+}
+
+export async function submitSemesterExam(payload: SemesterExamSubmission): Promise<any> {
+    const response = await fetch(`${API_BASE}/exams/semester-exam/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to submit exam: ${response.statusText}`)
+    }
+    return response.json()
+}
+
+export async function canProgressSemester(playerId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/exams/can-progress-semester?player_id=${encodeURIComponent(playerId)}`)
+    if (!response.ok) throw new Error(`Failed to check progression: ${response.statusText}`)
+    return response.json()
+}
+
+export async function advanceSemester(playerId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/progress/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId }),
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to advance semester: ${response.statusText}`)
+    }
+    return response.json()
+}
+
 export async function prefetchFinanceData(playerId: string): Promise<void> {
     try {
         await getPlayer(playerId)
