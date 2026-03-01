@@ -18,6 +18,7 @@ import {
 import { getSemesterInfo, getCurrentPhase } from '../utils/semesterUtils'
 import LifeReadinessPanel from './LifeReadinessPanel'
 import VisualExperiencePanel from './VisualExperiencePanel'
+import FinanceToolsPanel from './FinanceToolsPanel'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -1050,25 +1051,7 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
 
                     {activeTab === 'finance' && (
                         <section className="tab-content">
-                            <h2>Financial Status</h2>
-                            <div className="finance-info">
-                                <div className="info-card">
-                                    <label>Cash Balance</label>
-                                    <p className="amount">${player.finance?.balance?.toFixed(2) || '0.00'}</p>
-                                </div>
-                                <div className="info-card">
-                                    <label>Monthly Expenses</label>
-                                    <p className="amount">${player.finance?.monthly_expenses?.toFixed(2) || '0.00'}</p>
-                                </div>
-                                <div className="info-card">
-                                    <label>Tuition (Per Semester)</label>
-                                    <p className="amount">${player.finance?.tuition_per_semester?.toFixed(2) || '0.00'}</p>
-                                </div>
-                                <div className="info-card">
-                                    <label>Scholarship</label>
-                                    <p className="amount">${player.finance?.scholarship_per_semester?.toFixed(2) || '0.00'}</p>
-                                </div>
-                            </div>
+                            <FinanceToolsPanel player={player} />
                         </section>
                     )}
 

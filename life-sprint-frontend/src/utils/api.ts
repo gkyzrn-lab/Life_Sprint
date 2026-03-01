@@ -217,6 +217,48 @@ export interface LifeReadinessResponse {
     readiness_history: ReadinessSnapshot[]  // Historical trend data
 }
 
+export interface FinanceLoanRecord {
+    id: string
+    loan_type: 'subsidized' | 'unsubsidized' | 'private' | string
+    principal: number
+    annual_interest_rate: number
+    accrued_interest: number
+    in_school: boolean
+    grace_months_remaining: number
+    repayment_months_remaining: number
+    minimum_payment: number
+}
+
+export interface FinanceBorrowResponse {
+    player_id: string
+    borrowed_total: number
+    remaining_uncovered: number
+    new_balance: number
+    loans: FinanceLoanRecord[]
+}
+
+export interface FinanceProfileResponse {
+    player_id: string
+    repayment_profile: {
+        plan_type: 'standard' | 'idr' | string
+        annual_income: number
+        family_size: number
+        poverty_line_annual: number
+        discretionary_multiplier: number
+        idr_percent: number
+        payment_cap_to_standard: boolean
+    }
+}
+
+export interface FinanceRepayResponse {
+    player_id: string
+    months: number
+    total_paid: number
+    ending_balance: number
+    total_principal_remaining: number
+    loans: FinanceLoanRecord[]
+}
+
 // Player Management
 export async function createPlayer(
     name: string,
@@ -252,6 +294,63 @@ export async function createPlayer(
 export async function getPlayer(playerId: string): Promise<Player> {
     const response = await fetch(`${API_BASE}/player/${playerId}`)
     if (!response.ok) throw new Error(`Failed to fetch player: ${response.statusText}`)
+    return response.json()
+}
+
+// Finance Tools
+export async function financeBorrow(playerId: string, neededAmount: number): Promise<FinanceBorrowResponse> {
+    const response = await fetch(`${API_BASE}/finance/borrow`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId, needed_amount: neededAmount }),
+    })
+    if (!response.ok) throw new Error(`Failed to borrow funds: ${response.statusText}`)
+    return response.json()
+}
+
+export async function financeAccrueInSchoolInterest(playerId: string, months = 4): Promise<{ player_id: string; months: number; loans: FinanceLoanRecord[] }> {
+    const response = await fetch(`${API_BASE}/finance/accrue-in-school-interest?player_id=${encodeURIComponent(playerId)}&months=${encodeURIComponent(String(months))}`, {
+        method: 'POST',
+    })
+    if (!response.ok) throw new Error(`Failed to accrue in-school interest: ${response.statusText}`)
+    return response.json()
+}
+
+export async function financeStartRepayment(playerId: string): Promise<{ player_id: string; status: string; loans: FinanceLoanRecord[] }> {
+    const response = await fetch(`${API_BASE}/finance/start-repayment?player_id=${encodeURIComponent(playerId)}`, {
+        method: 'POST',
+    })
+    if (!response.ok) throw new Error(`Failed to start repayment: ${response.statusText}`)
+    return response.json()
+}
+
+export async function financeSetRepaymentProfile(
+    playerId: string,
+    planType: 'standard' | 'idr',
+    annualIncome: number,
+    familySize = 1,
+): Promise<FinanceProfileResponse> {
+    const response = await fetch(`${API_BASE}/finance/set-repayment-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            plan_type: planType,
+            annual_income: annualIncome,
+            family_size: familySize,
+        }),
+    })
+    if (!response.ok) throw new Error(`Failed to set repayment profile: ${response.statusText}`)
+    return response.json()
+}
+
+export async function financeRepayMonths(playerId: string, months: number): Promise<FinanceRepayResponse> {
+    const response = await fetch(`${API_BASE}/finance/repay-months`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId, months }),
+    })
+    if (!response.ok) throw new Error(`Failed to process repayment: ${response.statusText}`)
     return response.json()
 }
 

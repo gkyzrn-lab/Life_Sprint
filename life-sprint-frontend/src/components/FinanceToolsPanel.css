@@ -1,0 +1,144 @@
+.finance-tools-wrap {
+    display: grid;
+    gap: 16px;
+}
+
+.finance-tools-wrap h2 {
+    margin: 0;
+}
+
+.finance-alert {
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 600;
+}
+
+.finance-error {
+    background: rgba(239, 68, 68, 0.12);
+    color: #991b1b;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.finance-success {
+    background: rgba(16, 185, 129, 0.12);
+    color: #065f46;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.finance-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.finance-summary-card,
+.finance-debt-card,
+.finance-tool-card,
+.loan-table-card {
+    padding: 14px;
+}
+
+.finance-summary-card label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.finance-summary-card p {
+    margin: 8px 0 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.debt-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.debt-metrics div {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.debt-metrics span {
+    display: block;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.debt-metrics strong {
+    font-size: 1.05rem;
+}
+
+.finance-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.finance-tool-card h3,
+.loan-table-card h3,
+.finance-debt-card h3 {
+    margin: 0 0 10px;
+}
+
+.tool-row {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tool-row label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.tool-row input,
+.tool-row select {
+    border: 1px solid #d6deee;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 14px;
+}
+
+.tool-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.loan-table-wrap {
+    overflow-x: auto;
+}
+
+.loan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.loan-table th,
+.loan-table td {
+    text-align: left;
+    padding: 9px 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.loan-table thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #475569;
+}
+
+@media (max-width: 980px) {
+    .finance-tools-grid {
+        grid-template-columns: 1fr;
+    }
+}
