@@ -27,6 +27,8 @@ interface GameBoardProps {
     onLogout: () => void
 }
 
+type GameTab = 'stats' | 'finance' | 'planning' | 'academics' | 'visual' | 'analytics' | 'store'
+
 interface Course {
     id: string
     title: string
@@ -51,7 +53,7 @@ interface LessonConceptGameResult {
 }
 
 export function GameBoard({ player, onLogout }: GameBoardProps) {
-    const [activeTab, setActiveTab] = useState<'stats' | 'finance' | 'planning' | 'academics' | 'visual' | 'analytics' | 'store'>('stats')
+    const [activeTab, setActiveTab] = useState<GameTab>('stats')
     const [classContent, setClassContent] = useState<ClassContent | null>(null)
     const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
@@ -955,6 +957,96 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
         return da - db
     })
 
+    const gpaValue = Number(player.stats?.gpa ?? 0)
+    const stressValue = Number(player.stats?.stress ?? 0)
+    const networkValue = Number(player.stats?.network ?? 0)
+    const healthValue = Number(player.stats?.health ?? 0)
+    const balanceValue = Number(player.finance?.balance ?? 0)
+
+    const momentumScore = Math.round(
+        clampNumber(
+            (gpaValue / 4) * 40 + ((100 - stressValue) * 0.22) + (networkValue * 0.18) + (healthValue * 0.2),
+            0,
+            100,
+        ),
+    )
+
+    const momentumLabel = momentumScore >= 80
+        ? 'On Fire'
+        : momentumScore >= 60
+            ? 'Stable Climb'
+            : momentumScore >= 40
+                ? 'Needs Attention'
+                : 'Critical Recovery'
+
+    const coachTips: Array<{
+        id: string
+        title: string
+        detail: string
+        tab: GameTab
+        cta: string
+    }> = []
+
+    if (stressValue >= 70) {
+        coachTips.push({
+            id: 'stress-high',
+            title: 'Stress is very high',
+            detail: 'Shift your schedule, reduce overload, and make one recovery purchase this term.',
+            tab: 'planning',
+            cta: 'Adjust Plan',
+        })
+    }
+
+    if (balanceValue < 500) {
+        coachTips.push({
+            id: 'cash-low',
+            title: 'Cash buffer is low',
+            detail: 'Review debt and repayment profile to protect cash runway.',
+            tab: 'finance',
+            cta: 'Open Finance',
+        })
+    }
+
+    if (!player.plan) {
+        coachTips.push({
+            id: 'no-plan',
+            title: 'No active semester plan',
+            detail: 'Create and lock a plan to stabilize outcomes before advancing.',
+            tab: 'planning',
+            cta: 'Create Plan',
+        })
+    }
+
+    if (gpaValue < 2.8) {
+        coachTips.push({
+            id: 'gpa-risk',
+            title: 'GPA recovery opportunity',
+            detail: 'Focus on classes and complete mini-games to recover performance quickly.',
+            tab: 'academics',
+            cta: 'Study Now',
+        })
+    }
+
+    if (networkValue < 40) {
+        coachTips.push({
+            id: 'network-low',
+            title: 'Network score can grow faster',
+            detail: 'Pick social or mentorship activities and strategic store items.',
+            tab: 'store',
+            cta: 'Open Store',
+        })
+    }
+
+    if (coachTips.length === 0) {
+        coachTips.push({
+            id: 'all-good',
+            title: 'Great momentum',
+            detail: 'You are balanced. Push for higher GPA and maintain low stress.',
+            tab: 'academics',
+            cta: 'Chase Excellence',
+        })
+    }
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -1032,19 +1124,68 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                             <div className="stats-grid">
                                 <div className="stat-card">
                                     <h3>GPA</h3>
-                                    <p className="stat-value">{player.stats?.gpa?.toFixed(2) || 'N/A'}</p>
+                                    <p className="stat-value">{gpaValue.toFixed(2)}</p>
                                 </div>
                                 <div className="stat-card">
                                     <h3>Stress</h3>
-                                    <p className="stat-value">{player.stats?.stress?.toFixed(0) || 'N/A'}%</p>
+                                    <p className="stat-value">{stressValue.toFixed(0)}%</p>
                                 </div>
                                 <div className="stat-card">
                                     <h3>Network</h3>
-                                    <p className="stat-value">{player.stats?.network?.toFixed(0) || 'N/A'}</p>
+                                    <p className="stat-value">{networkValue.toFixed(0)}</p>
                                 </div>
                                 <div className="stat-card">
                                     <h3>Health</h3>
-                                    <p className="stat-value">{player.stats?.health?.toFixed(0) || 'N/A'}%</p>
+                                    <p className="stat-value">{healthValue.toFixed(0)}%</p>
+                                </div>
+                                <div className="stat-card momentum-card">
+                                    <h3>Momentum</h3>
+                                    <p className="stat-value">{momentumScore}</p>
+                                    <span className="momentum-label">{momentumLabel}</span>
+                                </div>
+                            </div>
+
+                            <div className="stats-progress-grid">
+                                <div className="progress-card">
+                                    <div className="progress-head">
+                                        <span>Academic Progress</span>
+                                        <strong>{((gpaValue / 4) * 100).toFixed(0)}%</strong>
+                                    </div>
+                                    <progress max={100} value={clampNumber((gpaValue / 4) * 100, 0, 100)} />
+                                </div>
+                                <div className="progress-card">
+                                    <div className="progress-head">
+                                        <span>Wellbeing Stability</span>
+                                        <strong>{clampNumber((healthValue + (100 - stressValue)) / 2, 0, 100).toFixed(0)}%</strong>
+                                    </div>
+                                    <progress max={100} value={clampNumber((healthValue + (100 - stressValue)) / 2, 0, 100)} />
+                                </div>
+                                <div className="progress-card">
+                                    <div className="progress-head">
+                                        <span>Career Network Growth</span>
+                                        <strong>{clampNumber(networkValue, 0, 100).toFixed(0)}%</strong>
+                                    </div>
+                                    <progress max={100} value={clampNumber(networkValue, 0, 100)} />
+                                </div>
+                            </div>
+
+                            <div className="coach-panel">
+                                <div className="coach-header">
+                                    <h3>🎯 Life Coach Recommendations</h3>
+                                    <p>Top actions to improve your next semester outcome.</p>
+                                </div>
+                                <div className="coach-list">
+                                    {coachTips.slice(0, 3).map((tip) => (
+                                        <div key={tip.id} className="coach-item">
+                                            <div>
+                                                <h4>{tip.title}</h4>
+                                                <p>{tip.detail}</p>
+                                            </div>
+                                            <button className="coach-action-btn" onClick={() => setActiveTab(tip.tab)}>
+                                                {tip.cta}
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </section>
@@ -1064,10 +1205,47 @@ export function GameBoard({ player, onLogout }: GameBoardProps) {
                                 {player.plan ? (
                                     <div className="plan-details">
                                         <p>Current plan is active</p>
+                                        <div className="plan-summary-grid">
+                                            <div>
+                                                <label>Housing</label>
+                                                <strong>{player.plan.housing_option_id || 'Not set'}</strong>
+                                            </div>
+                                            <div>
+                                                <label>Job</label>
+                                                <strong>{player.plan.job_id || 'No job selected'}</strong>
+                                            </div>
+                                            <div>
+                                                <label>Activities</label>
+                                                <strong>{Array.isArray(player.plan.activities) ? player.plan.activities.length : 0}</strong>
+                                            </div>
+                                            <div>
+                                                <label>Status</label>
+                                                <strong>{player.plan.locked ? 'Locked' : 'Draft'}</strong>
+                                            </div>
+                                        </div>
+                                        <div className="planning-quick-actions">
+                                            <button className="plan-jump-btn" onClick={() => setActiveTab('academics')}>
+                                                Improve Academic Mix
+                                            </button>
+                                            <button className="plan-jump-btn" onClick={() => setActiveTab('finance')}>
+                                                Check Budget Fit
+                                            </button>
+                                            <button className="plan-jump-btn" onClick={() => setActiveTab('store')}>
+                                                Add Recovery Items
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="no-plan">
                                         <p>No plan created yet. Create one to get started!</p>
+                                        <div className="planning-quick-actions">
+                                            <button className="plan-jump-btn" onClick={() => setActiveTab('academics')}>
+                                                Pick Courses First
+                                            </button>
+                                            <button className="plan-jump-btn" onClick={() => setActiveTab('finance')}>
+                                                Prepare Finances
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
