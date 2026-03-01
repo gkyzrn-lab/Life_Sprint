@@ -21,6 +21,9 @@ import {
     generateSemesterExam,
     submitSemesterExam,
     advanceSemester,
+    savePlan,
+    lockPlan,
+    forecastPlan,
 } from '../utils/api'
 import { getSemesterInfo, getCurrentPhase } from '../utils/semesterUtils'
 import LifeReadinessPanel from './LifeReadinessPanel'
@@ -28,6 +31,7 @@ import VisualExperiencePanel from './VisualExperiencePanel'
 import FinanceToolsPanel from './FinanceToolsPanel'
 import { StorePanel } from './StorePanel'
 import SemesterSummaryScreen from './SemesterSummaryScreen'
+import PlanningPanel from './PlanningPanel'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -86,6 +90,12 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
     const [examScore, setExamScore] = useState<number | null>(null)
     const [semesterSummary, setSemesterSummary] = useState<any | null>(null)
     const [showSemesterSummary, setShowSemesterSummary] = useState(false)
+
+    // Planning catalogs state
+    const [housingOptions, setHousingOptions] = useState<Record<string, any>>({})
+    const [jobOptions, setJobOptions] = useState<Record<string, any>>({})
+    const [activities, setActivities] = useState<Record<string, any>>({})
+    const [catalogsLoading, setCatalogsLoading] = useState(false)
 
     // Quiz state
     const [activeQuiz, setActiveQuiz] = useState<any | null>(null)
@@ -412,6 +422,38 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
     }, [player?.id, player?.semester])
 
     useEffect(() => {
+        const loadPlanningCatalogs = async () => {
+            try {
+                setCatalogsLoading(true)
+                const [housingRes, jobsRes, activitiesRes] = await Promise.all([
+                    fetch(`/api/catalogs/housing`),
+                    fetch(`/api/catalogs/jobs`),
+                    fetch(`/api/catalogs/activities`),
+                ])
+
+                if (housingRes.ok) {
+                    const housingData = await housingRes.json()
+                    setHousingOptions(housingData)
+                }
+                if (jobsRes.ok) {
+                    const jobsData = await jobsRes.json()
+                    setJobOptions(jobsData)
+                }
+                if (activitiesRes.ok) {
+                    const activitiesData = await activitiesRes.json()
+                    setActivities(activitiesData)
+                }
+            } catch (err) {
+                console.error('Failed to load planning catalogs:', err)
+            } finally {
+                setCatalogsLoading(false)
+            }
+        }
+
+        loadPlanningCatalogs()
+    }, [])
+
+    useEffect(() => {
         if (!pendingRecommendedGameId || activeTab !== 'academics' || !classContent) return
 
         const card = document.querySelector(`[data-game-id="${pendingRecommendedGameId}"]`) as HTMLElement | null
@@ -526,6 +568,13 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
     }
 
     const handleProgressSemester = async () => {
+        // Check if plan is locked
+        if (!player.plan || !player.plan.locked) {
+            setError('❌ You must lock your semester plan before proceeding. Go to the Planning tab!')
+            setActiveTab('planning')
+            return
+        }
+
         try {
             setLoading(true)
 
@@ -1329,69 +1378,20 @@ export function GameBoard({ player, onLogout, onPlayerUpdate, onRefreshPlayer }:
 
                     {activeTab === 'planning' && (
                         <section className="tab-content">
-                            <h2>Semester Planning</h2>
-                            <div className="planning-info">
-                                <p>Plan your semester activities and time allocation.</p>
-                                {player.plan ? (
-                                    <div className="plan-details">
-                                        <p>Current plan is active</p>
-                                        <div className="plan-summary-grid">
-                                            <div>
-                                                <label>Housing</label>
-                                                <strong>{player.plan.housing_option_id || 'Not set'}</strong>
-                                            </div>
-                                            <div>
-                                                <label>Job</label>
-                                                <strong>{player.plan.job_id || 'No job selected'}</strong>
-                                            </div>
-                                            <div>
-                                                <label>Activities</label>
-                                                <strong>{Array.isArray(player.plan.activities) ? player.plan.activities.length : 0}</strong>
-                                            </div>
-                                            <div>
-                                                <label>Status</label>
-                                                <strong>{player.plan.locked ? 'Locked' : 'Draft'}</strong>
-                                            </div>
-                                        </div>
-                                        <div className="planning-quick-actions">
-                                            <button className="plan-jump-btn" onClick={() => setActiveTab('academics')}>
-                                                Improve Academic Mix
-                                            </button>
-                                            <button className="plan-jump-btn" onClick={() => setActiveTab('finance')}>
-                                                Check Budget Fit
-                                            </button>
-                                            <button className="plan-jump-btn" onClick={() => setActiveTab('store')}>
-                                                Add Recovery Items
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="no-plan">
-                                        <p>No plan created yet. Create one to get started!</p>
-                                        <div className="planning-quick-actions">
-                                            <button className="plan-jump-btn" onClick={() => setActiveTab('academics')}>
-                                                Pick Courses First
-                                            </button>
-                                            <button className="plan-jump-btn" onClick={() => setActiveTab('finance')}>
-                                                Prepare Finances
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="planning-draft-card">
-                                    <div className="planning-draft-head">
-                                        <h3>Quick Plan Draft</h3>
-                                        <span className={`draft-status ${planningDraftStatus}`}>{planningDraftStatus === 'saving' ? 'Saving…' : planningDraftStatus === 'saved' ? 'Saved' : 'Idle'}</span>
-                                    </div>
-                                    <textarea
-                                        value={planningDraft}
-                                        onChange={(e) => setPlanningDraft(e.target.value)}
-                                        placeholder="Write your semester intention, risk notes, or weekly action plan..."
-                                        rows={4}
-                                    />
+                            {catalogsLoading ? (
+                                <div className="loading-placeholder">
+                                    <p>Loading planning options...</p>
                                 </div>
-                            </div>
+                            ) : (
+                                <PlanningPanel
+                                    player={player}
+                                    onPlayerUpdate={onPlayerUpdate}
+                                    onRefreshPlayer={onRefreshPlayer}
+                                    allHousingOptions={housingOptions}
+                                    allJobOptions={jobOptions}
+                                    allActivities={activities}
+                                />
+                            )}
                         </section>
                     )}
 

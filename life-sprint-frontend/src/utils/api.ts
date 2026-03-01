@@ -690,6 +690,94 @@ export async function advanceSemester(playerId: string): Promise<any> {
     return response.json()
 }
 
+export interface SavePlanRequest {
+    player_id: string
+    semester: number
+    housing_option_id: string
+    job_id: string | null
+    activities: string[]
+}
+
+export interface LockPlanRequest {
+    player_id: string
+    semester: number
+}
+
+export interface ForecastResult {
+    weekly_load: {
+        course_hours: number
+        work_hours: number
+        activity_hours: number
+        total_hours: number
+        overload: number
+    }
+    warnings: string[]
+}
+
+export async function savePlan(
+    playerId: string,
+    semester: number,
+    housingOptionId: string,
+    jobId: string | null,
+    activities: string[]
+): Promise<any> {
+    const response = await fetch(`${API_BASE}/planning/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            semester,
+            housing_option_id: housingOptionId,
+            job_id: jobId || null,
+            activities,
+        }),
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to save plan: ${response.statusText}`)
+    }
+    return response.json()
+}
+
+export async function lockPlan(playerId: string, semester: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/planning/lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            semester,
+        }),
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to lock plan: ${response.statusText}`)
+    }
+    return response.json()
+}
+
+export async function forecastPlan(
+    playerId: string,
+    housingOptionId: string,
+    jobId: string | null,
+    activities: string[]
+): Promise<ForecastResult> {
+    const response = await fetch(`${API_BASE}/planning/forecast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            player_id: playerId,
+            housing_option_id: housingOptionId,
+            job_id: jobId || null,
+            activities,
+        }),
+    })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to forecast plan: ${response.statusText}`)
+    }
+    return response.json()
+}
+
 export async function prefetchFinanceData(playerId: string): Promise<void> {
     try {
         await getPlayer(playerId)
